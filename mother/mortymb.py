@@ -31,9 +31,14 @@ fpga = Part('xilinx', 'Spartan6', footprint='BGA-256')
 fpga_vcc += fpga['VCC']
 fpga_gnd += fpga['GND']
 
-# UART communication between CPU and FPGA
-cpu['UART_TX'] += fpga['UART_RX']
-fpga['UART_TX'] += cpu['UART_RX']
+# Define UART communication module
+uart_comm = Part('my_lib', 'uart_comm')
+
+# Connect UART communication between CPU and FPGA through the UART module
+cpu['UART_TX'] += uart_comm['uart_rx']
+uart_comm['uart_tx'] += fpga['UART_RX']
+fpga['UART_TX'] += uart_comm['uart_rx']
+uart_comm['uart_tx'] += cpu['UART_RX']
 
 # Define PCIe slots for GPUs (Example: PCIe x16)
 pcie_slots = []
