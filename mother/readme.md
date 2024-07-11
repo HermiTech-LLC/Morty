@@ -1,7 +1,7 @@
 # Complete Advanced Motherboard Design
 
 ## Overview
-This project involves the design of an advanced motherboard using the Skidl library for schematic generation. The design integrates various high-performance components, including an AMD Ryzen 7 CPU, DDR4 RAM modules, a Xilinx Spartan-6 FPGA, PCIe slots for GPUs, and multiple controllers for USB, Ethernet, and SATA. The design ensures efficient power distribution and signal routing, providing a robust platform for high-performance computing applications.
+This project involves the design of an advanced motherboard using the Skidl library for schematic generation. The design integrates various high-performance components, including an AMD Ryzen 9 7950X CPU, DDR4 RAM modules, a Xilinx Spartan-6 FPGA, PCIe slots for GPUs, and multiple controllers for USB, Ethernet, and SATA. The design ensures efficient power distribution and signal routing, providing a robust platform for high-performance computing applications.
 
 ## Power Distribution
 
@@ -14,10 +14,10 @@ The main 12V input is regulated down to the required voltages for various compon
 
 ### Components and Power Requirements
 
-1. **CPU (AMD Ryzen 7)**
+1. **CPU (AMD Ryzen 9 7950X)**
    - **Voltage:** 1.35V
-   - **Current:** 65A
-   - **Power Consumption:** 87.75W
+   - **Current:** 105A
+   - **Power Consumption:** 141.75W
    - **Regulation:** VRM
 
 2. **DDR4 RAM Modules (2x)**
@@ -93,7 +93,7 @@ The main 12V input is regulated down to the required voltages for various compon
     - **Regulation:** VRM
 
 ### Total Power Consumption
-- **CPU:** 87.75W
+- **CPU:** 141.75W
 - **RAM Modules:** 2.4W
 - **FPGA:** 2.85W
 - **PCIe Slots (6x GPUs):** 432W
@@ -102,7 +102,7 @@ The main 12V input is regulated down to the required voltages for various compon
 - **Ethernet Controller and Port:** 1.65W
 - **SATA Controller and Ports:** 10.99W
 - **Clock Generator:** 0.33W
-- **Total Power Consumption:** Approximately 568.095W
+- **Total Power Consumption:** Approximately 622.62W
 
 ### Conclusion
 This motherboard design efficiently distributes power across various high-performance components, ensuring stable operation and high efficiency. The primary 12V input is effectively regulated to meet the specific voltage and current requirements of each component, providing a reliable platform for high-performance applications.
