@@ -10,7 +10,10 @@ This project implements a bipedal humanoid control system using a Physics-Inform
 
 - `rospinn.py`: The main ROS node script implementing the PINN and RL algorithms.
 - `uart_comm.v`: Verilog module for UART communication with FPGA.
-- `main.py`: Script to compile the Verilog module and run the ROS node.
+- `top_L.v`: Top-level Verilog module integrating all components.
+- `cpu.v`: Verilog module for the CPU.
+- `fpga.v`: Verilog module for the FPGA.
+- `main.py`: Script to compile the Verilog modules and run the ROS node.
 - `mortymb.py`: Defines the electronic components and connections for the robot’s motherboard using `skidl`.
 - `README.md`: This file.
 
@@ -33,11 +36,17 @@ This project implements a bipedal humanoid control system using a Physics-Inform
    pip install torch scikit-learn skidl
    ```
 
-2. **Compile the Verilog Module**:
-   Compile the Verilog module for UART communication with the FPGA using `iverilog` and `vvp`:
+2. **Compile the Verilog Modules**:
+   Compile the Verilog modules using `iverilog` and `vvp`:
    ```sh
    iverilog -o uart_comm uart_comm.v
+   iverilog -o top_L top_L.v
+   iverilog -o cpu cpu.v
+   iverilog -o fpga fpga.v
    vvp uart_comm
+   vvp top_L
+   vvp cpu
+   vvp fpga
    ```
 
 3. **Run the ROS Node**:
@@ -47,7 +56,7 @@ This project implements a bipedal humanoid control system using a Physics-Inform
    ```
 
 4. **Automate the Process**:
-   Alternatively, you can use the `main.py` script to compile the Verilog module and run the ROS node:
+   Alternatively, you can use the `main.py` script to compile the Verilog modules and run the ROS node:
    ```sh
    python main.py
    ```
@@ -75,11 +84,30 @@ The system is designed to control a bipedal humanoid robot. It subscribes to ROS
   - Implements UART communication protocols.
   - Facilitates data exchange between the FPGA and other components.
 
+### top_L.v
+
+- **Purpose**: Defines the top-level Verilog module integrating the CPU, FPGA, and UART modules.
+- **Functionality**:
+  - Connects the CPU, FPGA, and UART communication.
+  - Manages data flow between components.
+
+### cpu.v
+
+- **Purpose**: Defines the Verilog module for the CPU.
+- **Functionality**:
+  - Implements the CPU operations and interfaces with the UART and FPGA modules.
+
+### fpga.v
+
+- **Purpose**: Defines the Verilog module for the FPGA.
+- **Functionality**:
+  - Implements FPGA operations and interfaces with the CPU and UART modules.
+
 ### main.py
 
-- **Purpose**: Automates the compilation of the Verilog module and execution of the ROS node.
+- **Purpose**: Automates the compilation of the Verilog modules and execution of the ROS node.
 - **Functionality**:
-  - Compiles the Verilog module using `iverilog` and `vvp`.
+  - Compiles the Verilog modules using `iverilog` and `vvp`.
   - Runs the `rospinn.py` script using `rosrun`.
 
 ### mortymb.py
