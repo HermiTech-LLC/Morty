@@ -11,8 +11,8 @@ sata_vcc = Net('SATA_VCC')
 fpga_vcc = Net('FPGA_VCC')
 fpga_gnd = Net('FPGA_GND')
 
-# Define the CPU (Example: AMD Ryzen 7)
-cpu = Part('amd', 'Ryzen7', footprint='AM4')
+# Define the CPU (AMD Ryzen 9 7950X)
+cpu = Part('amd', 'Ryzen9_7950X', footprint='AM5')
 vcc += cpu['VCC']
 gnd += cpu['GND']
 
@@ -47,7 +47,6 @@ for i in range(6):
     pcie_vcc += pcie_slot['VCC']
     pcie_gnd += pcie_slot['GND']
     pcie_slots.append(pcie_slot)
-
 # Define GPUs (Example: AMD Radeon RX)
 gpus = []
 for i in range(6):
@@ -71,7 +70,6 @@ vcc += pmic['VCC']
 gnd += pmic['GND']
 pmic['OUT1'] += cpu['VCC']
 pmic['OUT2'] += [ram1['VCC'], ram2['VCC'], pcie_vcc]
-
 # Define motherboard connectors (Example: ATX)
 atx_power = Part('connector', 'ATX_POWER', footprint='ATX-24')
 vcc += atx_power['VCC']
