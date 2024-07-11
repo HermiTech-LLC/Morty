@@ -26,7 +26,7 @@ This project implements a bipedal humanoid control system using a Physics-Inform
 1. **Install Dependencies**:
    Ensure all dependencies are installed. You can install them using the following commands:
    ```sh
-   sudo apt-get install ros-noetic-desktop-full
+   sudo apt-get install ros-humble-desktop-full
    sudo apt-get install iverilog
    pip install torch scikit-learn skidl
    ```
