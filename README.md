@@ -1,5 +1,7 @@
 # Bipedal Humanoid Control System
-
+___
+![img](https://github.com/HermiTech-LLC/Morty/blob/main/Images/Mort.jpg)
+___
 ## Overview
 
 This project implements a bipedal humanoid control system using a Physics-Informed Neural Network (PINN) and Reinforcement Learning (RL) for stability and manipulation tasks. The system integrates with ROS for real-time control and utilizes FPGA for hardware acceleration.
