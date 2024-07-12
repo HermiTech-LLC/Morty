@@ -9,8 +9,10 @@ module top_level (
 // Internal signals
 wire [31:0] cpu_data_out;
 wire [31:0] fpga_data_in;
-wire cpu_error_flag;
-wire fpga_error_flag;
+wire [31:0] fpga_processed_data;
+wire [1:0] cpu_error_flag;
+wire [1:0] fpga_error_flag;
+wire [1:0] uart_error_flags;
 
 // Instantiate the CPU
 cpu_module cpu_instance (
@@ -25,7 +27,7 @@ fpga_module fpga_instance (
     .clk(clk),
     .reset(reset),
     .data_in(fpga_data_in),
-    .processed_data(debug_data_out),
+    .processed_data(fpga_processed_data),
     .error_flag(fpga_error_flag)
 );
 
@@ -36,10 +38,11 @@ uart_comm uart_instance (
     .data_in(cpu_data_out),
     .data_out(fpga_data_in),
     .uart_rx(uart_rx),
-    .uart_tx(uart_tx)
+    .uart_tx(uart_tx),
+    .error_flags(uart_error_flags)
 );
 
-// Combine error flags for monitoring
-assign debug_data_out = {cpu_error_flag, fpga_error_flag, cpu_data_out[29:0]};
+// Combine error flags for monitoring and add processed FPGA data to debug output
+assign debug_data_out = {cpu_error_flag, fpga_error_flag, uart_error_flags, fpga_processed_data[25:0]};
 
 endmodule
