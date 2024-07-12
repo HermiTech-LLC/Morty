@@ -28,6 +28,7 @@ ___
   - [Components](#components)
   - [Connections](#connections)
   - [Decoupling Capacitors](#decoupling-capacitors)
+  - [GPIO Integration Plans](#gpio-integration-plans)
 - [Conclusion](#conclusion)
 
 ## Overview
@@ -220,6 +221,10 @@ The `mortymb.py` script establishes connections for power and data lines between
 - **PMIC**:
   - Connects the PMIC to provide regulated power to the CPU and RAM.
   - Example: `pmic['OUT1'] += cpu['VCC']`.
+
+### GPIO Integration Plans
+
+For future expansion, the project plans to integrate GPIO (General Purpose Input/Output) for enhanced sensor interfacing and additional control capabilities.
 
 ## Conclusion
 
