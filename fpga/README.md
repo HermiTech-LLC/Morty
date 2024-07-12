@@ -1,9 +1,9 @@
 # FPGA Component Modules
 
 This repository contains the Verilog files and related resources for the FPGA project. The project includes several key modules such as the CPU, FPGA core, UART communication, and top-level integration.
-#___
+___
 ![FPGAdiagram](https://github.com/HermiTech-LLC/Morty/blob/main/Images/FPGAdiagram.PNG)
-#___
+___
 
 ## Directory Structure
 ___
