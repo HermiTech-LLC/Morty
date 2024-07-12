@@ -1,4 +1,4 @@
-# Advanced Electronic System Data Sheet
+# Electronic System Data Sheet
 
 ## System Overview
 
