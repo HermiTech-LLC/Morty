@@ -4,21 +4,6 @@ This repository contains the Verilog files and related resources for the FPGA pr
 ___
 ![FPGAdiagram](https://github.com/HermiTech-LLC/Morty/blob/main/Images/FPGAdiagram.PNG)
 ___
-
-## Directory Structure
-___
-```
-fpga/
-│
-├── const/                 # Constraint files
-├── sim/                   # Simulation files
-├── cpu.v                  # CPU module Verilog file
-├── fpga.v                 # FPGA core module Verilog file
-├── top_L.v                # Top-level integration Verilog file
-└── uart_comm.v            # UART communication module Verilog file
-```
-___
-
 ## Files and Modules
 
 ### `cpu.v`
