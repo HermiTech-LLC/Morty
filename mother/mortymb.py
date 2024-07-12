@@ -148,9 +148,3 @@ try:
     print("Netlist, schematic, and PCB layout generated successfully.")
 except Exception as e:
     print(f"An error occurred: {e}")
-
-# Instructions to run the script:
-# 1. Ensure you have SKiDL installed: `pip install skidl`
-# 2. Save this script as `motherboard_design.py`.
-# 3. Run the script using: `python motherboard_design.py`.
-# 4. Open the generated files in KiCad to verify the design.
