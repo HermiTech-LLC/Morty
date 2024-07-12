@@ -1,3 +1,4 @@
+
 # Bipedal Humanoid Control System
 
 ___
@@ -120,6 +121,82 @@ The system is designed to control a bipedal humanoid robot. It subscribes to ROS
   - Establishes connections between components.
   - Adds decoupling capacitors for power stability.
   - Generates netlist, schematic, and PCB layout files.
+
+## Conclusion
+
+This project provides a comprehensive system for controlling a bipedal humanoid robot. By integrating advanced hardware with sophisticated software algorithms, the robot can achieve stable and optimized performance in real-time environments.
+
+- **GND**: Ground.
+- **PCIE_VCC**: Power supply for PCIe slots and GPUs.
+- **PCIE_GND**: Ground for PCIe slots and GPUs.
+- **USB_VCC**: Power supply for USB ports.
+- **ETH_VCC**: Power supply for Ethernet controller and port.
+- **SATA_VCC**: Power supply for SATA controller and ports.
+- **FPGA_VCC**: Power supply for FPGA.
+- **FPGA_GND**: Ground for FPGA.
+
+### Helper Function
+
+- **add_decoupling_caps(part, pin_name, gnd, num_caps=2)**:
+  - Adds decoupling capacitors to a specified part and pin.
+  - Decoupling capacitors help stabilize the power supply to the components.
+
+### Components
+
+The script defines the following components:
+
+- **CPU**: AMD Ryzen9 7950X.
+- **RAM**: Two DDR4 memory modules.
+- **FPGA**: Xilinx Spartan6.
+- **UART Communication**: Custom UART communication module.
+- **PCIe Slots**: Six PCIe slots.
+- **GPUs**: Six AMD Radeon RX GPUs.
+- **PMIC**: Power Management IC (TI TPS65217).
+- **ATX Power**: ATX power connector.
+- **USB Controller**: NEC D720200.
+- **USB Ports**: Four USB ports.
+- **Ethernet Controller**: Realtek RTL8111.
+- **Ethernet Port**: RJ45 Ethernet port.
+- **SATA Controller**: Marvell 88SE9215.
+- **SATA Ports**: Four SATA ports.
+- **Clock Generator**: IDT 5V9885.
+- **VRMs**: Voltage Regulator Modules for different power nets.
+
+### Connections
+
+The script establishes connections for power and data lines between components:
+
+- **Power and Ground Connections**:
+  - Connects each component’s power and ground pins to the respective power nets.
+  - Example: `power_nets['VCC'] += cpu['VCC']`.
+
+- **CPU and RAM**:
+  - Connects address and data lines between the CPU and RAM modules.
+  - Example: `cpu['ADDR0', 'ADDR1', ...] += ram[0]['ADDR0', 'ADDR1', ...]`.
+
+- **FPGA**:
+  - Connects FPGA power and ground pins.
+  - Example: `power_nets['FPGA_VCC'] += fpga['VCC']`.
+
+- **UART Communication**:
+  - Connects UART communication lines between the CPU, UART module, and FPGA.
+  - Example: `cpu['UART_TX'] += uart_comm['uart_rx']`.
+
+- **PCIe Slots and GPUs**:
+  - Connects power, ground, and data lines between PCIe slots, GPUs, and CPU.
+  - Example: `power_nets['PCIE_VCC'] += pcie_slots[0]['VCC'], gpus[0]['PCIE_VCC']`.
+
+- **PMIC**:
+  - Connects the PMIC to provide regulated power to the CPU and RAM.
+  - Example: `pmic['OUT1'] += cpu['VCC']`.
+
+- **USB Controller and Ports**:
+  - Connects USB controller and ports to the power supply and data lines.
+  - Example: `power_nets['USB_VCC'] += usb_ports[0]['VCC']`.
+
+### Decoupling Capacitors
+
+- **Decoupling Capacitors**: Adds decoupling capacitors to various components to stabilize the power supply.
 
 ## Conclusion
 
