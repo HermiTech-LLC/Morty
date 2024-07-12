@@ -3,7 +3,8 @@
 ## Overview
 This project involves the design of an advanced motherboard using the Skidl library for schematic generation. The design integrates various high-performance components, including an AMD Ryzen 9 7950X CPU, DDR4 RAM modules, a Xilinx Spartan-6 FPGA, PCIe slots for GPUs, and multiple controllers for USB, Ethernet, and SATA. The design ensures efficient power distribution and signal routing, providing a robust platform for high-performance computing applications.
 ___
-![mortDiagram](
+![mortDiagram](https://github.com/HermiTech-LLC/Morty/blob/main/Images/MortDiagram.PNG)
+___
 ## Power Distribution
 
 ### Main Power Input
