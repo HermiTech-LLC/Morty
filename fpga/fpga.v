@@ -3,7 +3,7 @@ module fpga_module (
     input wire reset,
     input wire [31:0] data_in,
     output reg [31:0] processed_data,
-    output reg error_flag
+    output reg [1:0] error_flag
 );
 
 // Internal signals
@@ -13,7 +13,7 @@ always @(posedge clk or posedge reset) begin
     if (reset) begin
         internal_data <= 32'b0;
         processed_data <= 32'b0;
-        error_flag <= 1'b0;
+        error_flag <= 2'b0;
     end else begin
         // Data processing logic
         internal_data <= data_in + 32'hA5A5A5A5;
@@ -21,9 +21,16 @@ always @(posedge clk or posedge reset) begin
 
         // Error checking
         if (processed_data > 32'hFFFFFF00) begin
-            error_flag <= 1'b1;
+            error_flag[0] <= 1'b1; // Overflow error flag
         end else begin
-            error_flag <= 1'b0;
+            error_flag[0] <= 1'b0;
+        end
+
+        // Additional error check (e.g., even number check)
+        if (processed_data[0] == 1'b0) begin
+            error_flag[1] <= 1'b1; // Even number error flag
+        end else begin
+            error_flag[1] <= 1'b0;
         end
     end
 end
