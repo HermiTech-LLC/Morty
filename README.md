@@ -99,7 +99,7 @@ The system is designed to control a bipedal humanoid robot. It subscribes to ROS
 
 ## Detailed Descriptions
 
-### `rospinn.py`
+### `rospinn.py` *(at root)*
 
 - **Purpose**: Implements the main control algorithms for the robot using PINN and RL within a ROS node.
 - **Functionality**:
@@ -108,8 +108,9 @@ The system is designed to control a bipedal humanoid robot. It subscribes to ROS
   - Publishes control signals to actuate the robot.
   - Utilizes a PINN to maintain stability and perform manipulation tasks.
   - Uses RL to optimize control strategies based on feedback.
-
-### `uart_comm.v`
+___
+##fpga subdirectory
+### `uart_comm.v` 
 
 - **Purpose**: Defines the Verilog module for UART communication with the FPGA.
 - **Functionality**:
@@ -141,7 +142,8 @@ The system is designed to control a bipedal humanoid robot. It subscribes to ROS
 - **Functionality**:
   - Compiles the Verilog modules using `iverilog` and `vvp`.
   - Runs the `rospinn.py` script using `rosrun`.
-
+___
+## Schematics and assembly
 ### `mortymb.py`
 
 - **Purpose**: Defines and connects the electronic components of the robot’s motherboard using `skidl`.
@@ -193,7 +195,7 @@ The script defines the following components:
 
 ### Connections
 
-The script establishes connections for power and data lines between components:
+The `mortymb.py` script establishes connections for power and data lines between components:
 
 - **Power and Ground Connections**:
   - Connects each component’s power and ground pins to the respective power nets.
