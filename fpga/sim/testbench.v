@@ -4,12 +4,14 @@ reg clk;
 reg reset;
 reg uart_rx;
 wire uart_tx;
+wire [31:0] debug_data_out;
 
 top_level uut (
     .clk(clk),
     .reset(reset),
     .uart_rx(uart_rx),
-    .uart_tx(uart_tx)
+    .uart_tx(uart_tx),
+    .debug_data_out(debug_data_out)
 );
 
 // Clock generation: 100 MHz clock (period = 10ns)
@@ -55,6 +57,13 @@ initial begin
 
     // Further simulation logic
     #1000;
+
+    // Monitor debug_data_out
+    $monitor("Time: %0t | debug_data_out: %h | CPU Error Flag: %b | FPGA Error Flag: %b | UART Error Flags: %b", 
+             $time, debug_data_out, debug_data_out[31:30], debug_data_out[29:28], debug_data_out[27:26]);
+
+    // Stop simulation after some time
+    #500000;
     $stop;
 end
 
