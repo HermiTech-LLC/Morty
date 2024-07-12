@@ -224,7 +224,7 @@ The `mortymb.py` script establishes connections for power and data lines between
 
 ### GPIO Integration Plans
 
-For future expansion, the project plans to integrate GPIO (General Purpose Input/Output) for enhanced sensor interfacing and additional control capabilities.
+For future expansion, the project plans to integrate GPIO (General Purpose Input/Output) for enhanced sensor interfacing and integral control capabilities.
 
 ## Conclusion
 
