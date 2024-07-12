@@ -1,4 +1,43 @@
+import os
 from skidl import *
+
+# Function to find the KiCad library path dynamically
+def find_kicad_lib_path():
+    for root, dirs, files in os.walk('/'):
+        for name in dirs:
+            if name == 'kicad':
+                kicad_path = os.path.join(root, name, 'library')
+                if os.path.exists(kicad_path):
+                    return kicad_path
+    return None
+
+kicad_symbol_dir = find_kicad_lib_path()
+if not kicad_symbol_dir:
+    print("ERROR: KiCad library path not found.")
+    exit(1)
+
+os.environ['KICAD_SYMBOL_DIR'] = kicad_symbol_dir
+
+# Add KiCad symbol directories to search paths
+lib_search_paths[kicad_symbol_dir] = []
+
+# Helper function to recursively find and add library paths
+def add_library_paths(base_path):
+    for root, dirs, files in os.walk(base_path):
+        for file in files:
+            if file.endswith('.lib'):
+                lib_search_paths[root] = []
+
+add_library_paths(kicad_symbol_dir)
+
+# Helper function to load part with error handling
+def load_part(lib, name, footprint):
+    try:
+        part = Part(lib, name, footprint=footprint)
+        return part
+    except FileNotFoundError:
+        print(f"ERROR: Could not load KiCad library '{lib}' or part '{name}'.")
+        exit(1)
 
 # Define power supply nets
 power_nets = {
@@ -17,29 +56,29 @@ power_nets = {
 def add_decoupling_caps(part, pin_name, gnd, num_caps=2):
     caps = []
     for _ in range(num_caps):
-        cap = Part('device', 'C', value='100nF', footprint='0603')
+        cap = load_part('device', 'C', footprint='0603')
         cap[1] += part[pin_name]
         cap[2] += gnd
         caps.append(cap)
     return caps
 
 # Define components
-cpu = Part('amd', 'Ryzen9_7950X', footprint='AM5')
-ram = [Part('memory', 'DDR4', footprint='DIMM-288') for _ in range(2)]
-fpga = Part('xilinx', 'Spartan6', footprint='BGA-256')
-uart_comm = Part('my_lib', 'uart_comm')
-pcie_slots = [Part('connector', 'PCIE_SLOT', footprint='PCIEX16') for _ in range(6)]
-gpus = [Part('amd', 'RadeonRX', footprint='BGA-256') for _ in range(6)]
-pmic = Part('ti', 'TPS65217', footprint='QFN-32')
-atx_power = Part('connector', 'ATX_POWER', footprint='ATX-24')
-usb_ctrl = Part('nec', 'D720200', footprint='QFN-64')
-usb_ports = [Part('connector', 'USB_PORT', footprint='USB-A') for _ in range(4)]
-eth_ctrl = Part('realtek', 'RTL8111', footprint='QFN-64')
-eth_port = Part('connector', 'ETHERNET_PORT', footprint='RJ45')
-sata_ctrl = Part('marvell', '88SE9215', footprint='QFN-64')
-sata_ports = [Part('connector', 'SATA_PORT', footprint='SATA') for _ in range(4)]
-clock_gen = Part('idt', '5V9885', footprint='QFN-32')
-vrms = {net: Part('ti', 'TPS7A4501', footprint='DPAK') for net in power_nets.keys() if net != 'GND'}
+cpu = load_part('amd', 'Ryzen9_7950X', footprint='AM5')
+ram = [load_part('memory', 'DDR4', footprint='DIMM-288') for _ in range(2)]
+fpga = load_part('xilinx', 'Spartan6', footprint='BGA-256')
+uart_comm = load_part('my_lib', 'uart_comm', footprint=None)
+pcie_slots = [load_part('connector', 'PCIE_SLOT', footprint='PCIEX16') for _ in range(6)]
+gpus = [load_part('amd', 'RadeonRX', footprint='BGA-256') for _ in range(6)]
+pmic = load_part('ti', 'TPS65217', footprint='QFN-32')
+atx_power = load_part('connector', 'ATX_POWER', footprint='ATX-24')
+usb_ctrl = load_part('nec', 'D720200', footprint='QFN-64')
+usb_ports = [load_part('connector', 'USB_PORT', footprint='USB-A') for _ in range(4)]
+eth_ctrl = load_part('realtek', 'RTL8111', footprint='QFN-64')
+eth_port = load_part('connector', 'ETHERNET_PORT', footprint='RJ45')
+sata_ctrl = load_part('marvell', '88SE9215', footprint='QFN-64')
+sata_ports = [load_part('connector', 'SATA_PORT', footprint='SATA') for _ in range(4)]
+clock_gen = load_part('idt', '5V9885', footprint='QFN-32')
+vrms = {net: load_part('ti', 'TPS7A4501', footprint='DPAK') for net in power_nets.keys() if net != 'GND'}
 
 # Connect power and ground
 for net in power_nets.values():
@@ -140,7 +179,6 @@ add_decoupling_caps(fpga, 'VCC', power_nets['GND'])
 
 # Generate the netlist
 try:
-    generate_netlist()
     output_file = 'complete_advanced_motherboard.net'
     generate_netlist(output_file)
     generate_schematic(output_file.replace('.net', '.sch'))
