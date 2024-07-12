@@ -1,21 +1,23 @@
 # Bipedal Humanoid Control System
+
 ___
 ![img](https://github.com/HermiTech-LLC/Morty/blob/main/Images/Mort.jpg)
 ___
+
 ## Overview
 
 This project implements a bipedal humanoid control system using a Physics-Informed Neural Network (PINN) and Reinforcement Learning (RL) for stability and manipulation tasks. The system integrates with ROS for real-time control and utilizes FPGA for hardware acceleration.
 
 ## Directory Structure
 
-- `rospinn.py`: The main ROS node script implementing the PINN and RL algorithms.
-- `uart_comm.v`: Verilog module for UART communication with FPGA.
-- `top_L.v`: Top-level Verilog module integrating all components.
-- `cpu.v`: Verilog module for the CPU.
-- `fpga.v`: Verilog module for the FPGA.
-- `main.py`: Script to compile the Verilog modules and run the ROS node.
-- `mortymb.py`: Defines the electronic components and connections for the robot’s motherboard using `skidl`.
-- `README.md`: This file.
+- **`rospinn.py`**: Main ROS node script implementing the PINN and RL algorithms.
+- **`uart_comm.v`**: Verilog module for UART communication with FPGA.
+- **`top_L.v`**: Top-level Verilog module integrating all components.
+- **`cpu.v`**: Verilog module for the CPU.
+- **`fpga.v`**: Verilog module for the FPGA.
+- **`main.py`**: Script to compile the Verilog modules and run the ROS node.
+- **`mortymb.py`**: Defines the electronic components and connections for the robot’s motherboard using `skidl`.
+- **`README.md`**: This file.
 
 ## Dependencies
 
@@ -29,7 +31,7 @@ This project implements a bipedal humanoid control system using a Physics-Inform
 ## Setup
 
 1. **Install Dependencies**:
-   Ensure all dependencies are installed. You can install them using the following commands:
+   Ensure all dependencies are installed using the following commands:
    ```sh
    sudo apt-get install ros-humble-desktop-full
    sudo apt-get install iverilog
@@ -56,7 +58,7 @@ This project implements a bipedal humanoid control system using a Physics-Inform
    ```
 
 4. **Automate the Process**:
-   Alternatively, you can use the `main.py` script to compile the Verilog modules and run the ROS node:
+   Alternatively, use the `main.py` script to compile the Verilog modules and run the ROS node:
    ```sh
    python main.py
    ```
@@ -67,7 +69,7 @@ The system is designed to control a bipedal humanoid robot. It subscribes to ROS
 
 ## Detailed Descriptions
 
-### rospinn.py
+### `rospinn.py`
 
 - **Purpose**: Implements the main control algorithms for the robot using PINN and RL within a ROS node.
 - **Functionality**:
@@ -77,40 +79,40 @@ The system is designed to control a bipedal humanoid robot. It subscribes to ROS
   - Utilizes a PINN to maintain stability and perform manipulation tasks.
   - Uses RL to optimize control strategies based on feedback.
 
-### uart_comm.v
+### `uart_comm.v`
 
 - **Purpose**: Defines the Verilog module for UART communication with the FPGA.
 - **Functionality**:
   - Implements UART communication protocols.
   - Facilitates data exchange between the FPGA and other components.
 
-### top_L.v
+### `top_L.v`
 
 - **Purpose**: Defines the top-level Verilog module integrating the CPU, FPGA, and UART modules.
 - **Functionality**:
   - Connects the CPU, FPGA, and UART communication.
   - Manages data flow between components.
 
-### cpu.v
+### `cpu.v`
 
 - **Purpose**: Defines the Verilog module for the CPU.
 - **Functionality**:
   - Implements the CPU operations and interfaces with the UART and FPGA modules.
 
-### fpga.v
+### `fpga.v`
 
 - **Purpose**: Defines the Verilog module for the FPGA.
 - **Functionality**:
   - Implements FPGA operations and interfaces with the CPU and UART modules.
 
-### main.py
+### `main.py`
 
 - **Purpose**: Automates the compilation of the Verilog modules and execution of the ROS node.
 - **Functionality**:
   - Compiles the Verilog modules using `iverilog` and `vvp`.
   - Runs the `rospinn.py` script using `rosrun`.
 
-### mortymb.py
+### `mortymb.py`
 
 - **Purpose**: Defines and connects the electronic components of the robot’s motherboard using `skidl`.
 - **Functionality**:
