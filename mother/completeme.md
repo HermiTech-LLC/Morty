@@ -2,7 +2,7 @@
 
 ## Overview
 
-The current state of the Bipedal Humanoid Control System project demonstrates a solid foundation in combining an advanced neural network algorithms with real-time robotic control. The recent updates in the FPGA and electronic circuit diagrams highlight significant progress. However, the following areas require attention to achieve personal completeness:
+The current state of the Bipedal Humanoid Control System project demonstrates a solid foundation in combining an advanced neural network `(P.I.N.N)` and `RL` algorithms with real-time robotic control. The recent updates in the FPGA and electronic circuit diagrams highlight significant progress. However, the following areas require attention to achieve personal completeness:
 
 ## General Areas of Attention
 
