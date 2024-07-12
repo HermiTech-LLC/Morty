@@ -16,8 +16,7 @@ always @(posedge clk or posedge reset) begin
         counter <= 32'b0;
         error_flag <= 1'b0;
     end else begin
-        // Example data output logic
-        // Here we increment a counter and output its value
+        // Data output logic
         counter <= counter + 1;
         if (counter == 32'hFFFFFFFF) begin
             error_flag <= 1'b1; // Set error flag if counter overflows
