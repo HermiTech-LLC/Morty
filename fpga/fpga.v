@@ -15,12 +15,11 @@ always @(posedge clk or posedge reset) begin
         processed_data <= 32'b0;
         error_flag <= 1'b0;
     end else begin
-        // Example data processing logic
-        // Here we simply add a constant value to the input data
+        // Data processing logic
         internal_data <= data_in + 32'hA5A5A5A5;
         processed_data <= internal_data;
 
-        // Error checking: set error flag if processed data exceeds a certain threshold
+        // Error checking
         if (processed_data > 32'hFFFFFF00) begin
             error_flag <= 1'b1;
         end else begin
