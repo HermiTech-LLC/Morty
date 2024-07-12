@@ -99,7 +99,7 @@ The system is designed to control a bipedal humanoid robot. It subscribes to ROS
 
 ## Detailed Descriptions
 
-### `rospinn.py` *(at root)*
+### `rospinn.py`
 
 - **Purpose**: Implements the main control algorithms for the robot using PINN and RL within a ROS node.
 - **Functionality**:
