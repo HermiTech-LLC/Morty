@@ -109,7 +109,7 @@ The system is designed to control a bipedal humanoid robot. It subscribes to ROS
   - Utilizes a PINN to maintain stability and perform manipulation tasks.
   - Uses RL to optimize control strategies based on feedback.
 ___
-##fpga subdirectory
+## fpga subdirectory
 ### `uart_comm.v` 
 
 - **Purpose**: Defines the Verilog module for UART communication with the FPGA.
