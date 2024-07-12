@@ -12,10 +12,27 @@ top_level uut (
     .uart_tx(uart_tx)
 );
 
+// Clock generation: 100 MHz clock (period = 10ns)
 initial begin
     clk = 0;
-    forever #5 clk = ~clk; // 100 MHz clock
+    forever #5 clk = ~clk;
 end
+
+// Task for UART transmission
+task send_uart_byte;
+    input [7:0] byte;
+    integer i;
+    begin
+        uart_rx = 0; // Start bit
+        #104160; // BAUD_RATE_DIV for start bit (assuming 9600 baud rate)
+        for (i = 0; i < 8; i = i + 1) begin
+            uart_rx = byte[i]; // Data bits
+            #104160; // BAUD_RATE_DIV for each data bit
+        end
+        uart_rx = 1; // Stop bit
+        #104160; // BAUD_RATE_DIV for stop bit
+    end
+endtask
 
 initial begin
     // Initial reset
@@ -23,32 +40,20 @@ initial begin
     #20;
     reset = 0;
 
+    // Initial idle state
+    uart_rx = 1;
+
     // Simulate UART communication
-    uart_rx = 1; // Idle state
-    #100;
-    uart_rx = 0; // Start bit
-    #100;
-    uart_rx = 1; // Data bit 0
-    #100;
-    uart_rx = 0; // Data bit 1
-    #100;
-    uart_rx = 1; // Data bit 2
-    #100;
-    uart_rx = 0; // Data bit 3
-    #100;
-    uart_rx = 1; // Data bit 4
-    #100;
-    uart_rx = 0; // Data bit 5
-    #100;
-    uart_rx = 1; // Data bit 6
-    #100;
-    uart_rx = 0; // Data bit 7
-    #100;
-    uart_rx = 1; // Stop bit
-    #100;
+    send_uart_byte(8'b10101010); // Sending 0xAA
+    #200000; // Wait before next byte
 
-    // Further simulation logic here
+    send_uart_byte(8'b11001100); // Sending 0xCC
+    #200000; // Wait before next byte
 
+    send_uart_byte(8'b11110000); // Sending 0xF0
+    #200000; // Wait before next byte
+
+    // Further simulation logic
     #1000;
     $stop;
 end
