@@ -2,7 +2,7 @@
 set_property PACKAGE_PIN PIOA [get_ports clk]
 set_property IOSTANDARD LVCMOS33 [get_ports clk]
 # Specify the clock frequency (optional, if known)
-# create_clock -period 10.000 [get_ports clk]
+create_clock -period 10.000 [get_ports clk]
 
 # Reset signal constraints
 set_property PACKAGE_PIN PIOB [get_ports reset]
