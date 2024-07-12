@@ -1,9 +1,34 @@
-
 # Bipedal Humanoid Control System
 
 ___
 ![img](https://github.com/HermiTech-LLC/Morty/blob/main/Images/Mort.jpg)
 ___
+
+## Table of Contents
+- [Overview](#overview)
+- [Directory Structure](#directory-structure)
+- [Dependencies](#dependencies)
+- [Setup](#setup)
+  - [Install Dependencies](#install-dependencies)
+  - [Compile the Verilog Modules](#compile-the-verilog-modules)
+  - [Run the ROS Node](#run-the-ros-node)
+  - [Automate the Process](#automate-the-process)
+- [Usage](#usage)
+- [Detailed Descriptions](#detailed-descriptions)
+  - [`rospinn.py`](#rospinnpy)
+  - [`uart_comm.v`](#uart_commv)
+  - [`top_L.v`](#top_lv)
+  - [`cpu.v`](#cpuv)
+  - [`fpga.v`](#fpgav)
+  - [`main.py`](#mainpy)
+  - [`mortymb.py`](#mortymbpy)
+- [Appendix](#appendix)
+  - [Power and Ground Connections](#power-and-ground-connections)
+  - [Helper Function](#helper-function)
+  - [Components](#components)
+  - [Connections](#connections)
+  - [Decoupling Capacitors](#decoupling-capacitors)
+- [Conclusion](#conclusion)
 
 ## Overview
 
@@ -31,38 +56,42 @@ This project implements a bipedal humanoid control system using a Physics-Inform
 
 ## Setup
 
-1. **Install Dependencies**:
-   Ensure all dependencies are installed using the following commands:
-   ```sh
-   sudo apt-get install ros-humble-desktop-full
-   sudo apt-get install iverilog
-   pip install torch scikit-learn skidl
-   ```
+### Install Dependencies
 
-2. **Compile the Verilog Modules**:
-   Compile the Verilog modules using `iverilog` and `vvp`:
-   ```sh
-   iverilog -o uart_comm uart_comm.v
-   iverilog -o top_L top_L.v
-   iverilog -o cpu cpu.v
-   iverilog -o fpga fpga.v
-   vvp uart_comm
-   vvp top_L
-   vvp cpu
-   vvp fpga
-   ```
+Ensure all dependencies are installed using the following commands:
+```sh
+sudo apt-get install ros-humble-desktop-full
+sudo apt-get install iverilog
+pip install torch scikit-learn skidl
+```
 
-3. **Run the ROS Node**:
-   Start the ROS node that runs the PINN and RL algorithms:
-   ```sh
-   rosrun rospinn rospinn.py
-   ```
+### Compile the Verilog Modules
 
-4. **Automate the Process**:
-   Alternatively, use the `main.py` script to compile the Verilog modules and run the ROS node:
-   ```sh
-   python main.py
-   ```
+Compile the Verilog modules using `iverilog` and `vvp`:
+```sh
+iverilog -o uart_comm uart_comm.v
+iverilog -o top_L top_L.v
+iverilog -o cpu cpu.v
+iverilog -o fpga fpga.v
+vvp uart_comm
+vvp top_L
+vvp cpu
+vvp fpga
+```
+
+### Run the ROS Node
+
+Start the ROS node that runs the PINN and RL algorithms:
+```sh
+rosrun rospinn rospinn.py
+```
+
+### Automate the Process
+
+Alternatively, use the `main.py` script to compile the Verilog modules and run the ROS node:
+```sh
+python main.py
+```
 
 ## Usage
 
@@ -122,9 +151,9 @@ The system is designed to control a bipedal humanoid robot. It subscribes to ROS
   - Adds decoupling capacitors for power stability.
   - Generates netlist, schematic, and PCB layout files.
 
-## Conclusion
+## Appendix
 
-This project provides a comprehensive system for controlling a bipedal humanoid robot. By integrating advanced hardware with sophisticated software algorithms, the robot can achieve stable and optimized performance in real-time environments.
+### Power and Ground Connections
 
 - **GND**: Ground.
 - **PCIE_VCC**: Power supply for PCIe slots and GPUs.
@@ -189,14 +218,6 @@ The script establishes connections for power and data lines between components:
 - **PMIC**:
   - Connects the PMIC to provide regulated power to the CPU and RAM.
   - Example: `pmic['OUT1'] += cpu['VCC']`.
-
-- **USB Controller and Ports**:
-  - Connects USB controller and ports to the power supply and data lines.
-  - Example: `power_nets['USB_VCC'] += usb_ports[0]['VCC']`.
-
-### Decoupling Capacitors
-
-- **Decoupling Capacitors**: Adds decoupling capacitors to various components to stabilize the power supply.
 
 ## Conclusion
 
