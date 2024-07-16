@@ -155,7 +155,7 @@ ___
   - Generates netlist, schematic, and PCB layout files.
 
 ## Appendix
-
+*will be revised*
 ### Power and Ground Connections
 
 - **GND**: Ground.
