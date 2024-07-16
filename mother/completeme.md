@@ -1,83 +1,156 @@
-# Personal Completeness Assessment
+# Custom Linux Plan with Yocto
 
-## Overview
+## Phase 1: Initial Setup
 
-The current state of the Bipedal Humanoid Control System project demonstrates a solid foundation in combining an advanced neural network `(P.I.N.N)` and `RL` algorithms with real-time robotic control. The recent updates in the FPGA and electronic circuit diagrams highlight significant progress. However, the following areas require attention to achieve personal completeness:
+1. **Install Required Tools**
+   - Install Yocto Project dependencies on your development machine:
+     ```sh
+     sudo apt-get install gawk wget git-core diffstat unzip texinfo gcc-multilib \\
+     build-essential chrpath socat cpio python3 python3-pip python3-pexpect \\
+     xz-utils debianutils iputils-ping
+     ```
 
-## General Areas of Attention
+2. **Download Yocto Project**
+   - Clone the Yocto Project repository and set up the initial build environment:
+     ```sh
+     git clone git://git.yoctoproject.org/poky
+     cd poky
+     git checkout -b dunfell
+     source oe-init-build-env
+     ```
 
-1. **Library Dependencies:**
-   - **Current State:** Dependencies listed in `README.md` with installation instructions provided.
-   - **What's Left:**
-     - Create and include a `requirements.txt` for easy installation.
-     - Verify all dependencies are up-to-date and compatible with the latest code.
-     - Periodically update `requirements.txt` to reflect any changes.
+## Phase 2: Define Hardware and Software Requirements
 
-2. **Hardware Setup:**
-   - **Current State:** FPGA configuration and UART communication are integrated; hardware components are connected and partially tested.
-   - **What's Left:**
-     - Conduct a thorough hardware verification to ensure all components are correctly configured and communicating.
-     - Perform hardware-in-the-loop testing to validate hardware and software integration.
-     - Optimize the power distribution and signal integrity based on the detailed electronic circuit diagram.
+1. **Identify Target Hardware**
+   - Determine the hardware platform (e.g., Raspberry Pi 4, BeagleBone Black, custom FPGA board).
+   - Ensure the hardware supports AI/ML processing and ROS integration.
 
-3. **Performance Tuning:**
-   - **Current State:** ROS node and neural network models are implemented and partially optimized.
-   - **What's Left:**
-     - Continuously optimize the ROS node and neural network models to enhance real-time performance and stability.
-     - Adjust parameters and configurations to maximize efficiency and responsiveness.
-     - Leverage FPGA's parallel processing capabilities to offload computationally intensive tasks from the CPU.
+2. **List Software Dependencies**
+   - AI/ML libraries: PyTorch, scikit-learn.
+   - ROS and other dependencies listed in the `README.md`.
+   - Additional dependencies for `main.py` and `rospinn.py`.
 
-4. **Model Accuracy:**
-   - **Current State:** Initial versions of PINN and RL models are implemented.
-   - **What's Left:**
-     - Further refine the PINN and RL models to achieve precise and reliable control strategies.
-     - Implement additional training and validation to improve model performance.
-     - Utilize the FPGA's processing power to accelerate model inference and training.
+## Phase 3: Create Custom Layers and Bitbake Recipes
 
-5. **Testing and Validation:**
-   - **Current State:** Basic testing protocols are in place; initial hardware and software tests have been conducted.
-   - **What's Left:**
-     - Implement rigorous testing protocols to validate the system's functionality and robustness in various scenarios.
-     - Conduct both unit tests and system-level tests to ensure reliability.
-     - Validate the integration of FPGA and CPU components as shown in the diagrams.
+1. **Create Custom Yocto Layers**
+   - Create custom layers for the project:
+     ```sh
+     bitbake-layers create-layer meta-morty
+     ```
 
-6. **Documentation:**
-   - **Current State:** Basic documentation is available in `README.md`.
-   - **What's Left:**
-     - Maintain detailed and up-to-date documentation to facilitate ongoing development and troubleshooting.
-     - Include comprehensive guides, potential API integration documentation, and troubleshooting steps for future reference.
-     - Document the integration process and configuration settings of FPGA and other hardware components.
+2. **Layer Structure**
+   - Organize the layers to separate functionalities (e.g., AI/ML layer, ROS layer, FPGA layer).
 
-## Individual Component Assessments
+3. **Develop Bitbake Recipes**
+   - Create recipes for each software component and dependency. For example, for PyTorch:
+     ```sh
+     bitbake-layers add-layer meta-morty
+     cd meta-morty/recipes-example
+     mkdir pytorch
+     cd pytorch
+     ```
+   - Create `pytorch_%.bb` recipe file:
+     ```sh
+     DESCRIPTION = "PyTorch"
+     LICENSE = "MIT"
+     SRC_URI = "https://github.com/pytorch/pytorch/archive/v1.8.0.tar.gz"
 
-### a. ROS Node (`rospinn.py`)
-   - **Current State:** Implements the main control algorithms using PINN and RL.
-   - **What's Left:**
-     - Optimize the ROS node for better performance.
-     - Ensure robust error handling and logging.
-     - Integrate enhanced communication protocols with FPGA as per the updated diagrams.
+     inherit cmake
 
-### b. FPGA Configuration (`fpga` Directory)
-   - **Current State:** Contains FPGA-related files, including `uart_comm.v`, with partial verification completed.
-   - **What's Left:**
-     - Verify the FPGA configuration and ensure it is correctly programmed.
-     - Optimize the Verilog code for efficient communication.
-     - Ensure seamless integration with the CPU and other controllers as depicted in the advanced electronic circuit diagram.
+     do_compile() {
+         cmake -DCMAKE_INSTALL_PREFIX=${D} -DPYTORCH_BUILD_VERSION=1.8.0 ${S}
+         make
+     }
 
-### c. Main Script (`main.py`)
-   - **Current State:** Automates the compilation of the Verilog module and the execution of the ROS node.
-   - **What's Left:**
-     - Ensure the script covers all necessary setup steps and handles errors gracefully.
-     - Integrate comprehensive logging and error reporting features.
-     - Validate the execution flow considering the updated system architecture.
+     do_install() {
+         make install
+     }
 
-### d. Motherboard Design (`mortymb.py`)
-   - **Current State:** Defines electronic components and connections using `skidl`.
-   - **What's Left:**
-     - Verify the design for correctness and completeness.
-     - Ensure the generated netlist and PCB layout are error-free.
-     - Cross-verify the design with the advanced electronic circuit diagram to ensure all connections and components are correctly represented.
+     RDEPENDS_${PN} = "python3"
+     ```
 
-## Conclusion
+4. **Develop ROS Recipe**
+   - Create a recipe for ROS integration:
+     ```sh
+     cd meta-morty/recipes-example
+     mkdir ros
+     cd ros
+     ```
+   - Create `ros_%.bb` recipe file:
+     ```sh
+     DESCRIPTION = "ROS"
+     LICENSE = "BSD"
+     SRC_URI = "http://wiki.ros.org/ROS/Installation"
 
-By addressing these areas, particularly with the integration and advancements shown in the updated diagrams, the project can move closer to a state of completeness. This ensures a robust and efficient bipedal humanoid control system that leverages both CPU and FPGA strengths, enhancing performance and reliability.
+     do_install() {
+         apt-get install ros-noetic-desktop-full
+     }
+
+     RDEPENDS_${PN} = "python3"
+     ```
+
+5. **Develop Recipe for `main.py` and `rospinn.py`**
+   - Create recipes for `main.py` and `rospinn.py`:
+     ```sh
+     cd meta-morty/recipes-example
+     mkdir morty-scripts
+     cd morty-scripts
+     ```
+   - Create `morty-scripts.bb` recipe file:
+     ```sh
+     DESCRIPTION = "Morty Scripts"
+     LICENSE = "MIT"
+     SRC_URI = "file://main.py file://rospinn.py"
+
+     do_install() {
+         install -d ${D}${bindir}
+         install -m 0755 ${WORKDIR}/main.py ${D}${bindir}/main.py
+         install -m 0755 ${WORKDIR}/rospinn.py ${D}${bindir}/rospinn.py
+     }
+
+     RDEPENDS_${PN} = "python3 torch ros"
+     ```
+
+## Phase 4: Integration and Testing
+
+1. **Integrate AI/ML Models**
+   - Integrate the selected AI/ML models into the Yocto build.
+   - Optimize model performance for the target hardware.
+
+2. **Develop Application Logic**
+   - Implement the main application logic in Python.
+   - Leverage existing `main.py` and `rospinn.py` scripts as necessary.
+
+3. **Test and Debug**
+   - Test the integrated system on the target hardware.
+   - Validate functionality and performance.
+
+## Phase 5: Deployment and Documentation
+
+1. **Create Final Image**
+   - Build the final Yocto image for the embedded device:
+     ```sh
+     bitbake core-image-minimal
+     ```
+
+2. **Deploy and Test**
+   - Deploy the built image to the target hardware and verify the system.
+
+3. **Documentation**
+   - Update `README.md` with detailed instructions for building and deploying the project.
+   - Document any customizations and configurations made during the project.
+
+## Immediate Action Items
+
+1. **Set Up Yocto Environment**
+   - Install required tools and download the Yocto Project repository.
+   - Set up the initial build environment.
+
+2. **Prepare Custom Layers and Recipes**
+   - Begin developing the custom layers and Bitbake recipes based on the project requirements.
+
+3. **Integrate AI/ML Models**
+   - Ensure the AI/ML models are optimized and integrated into the Yocto build.
+
+4. **Test and Debug**
+   - Test the integrated system on the target hardware and debug any issues.
