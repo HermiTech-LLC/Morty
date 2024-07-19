@@ -1,9 +1,11 @@
 # FPGA Component Modules
 
-This repository contains the Verilog files and related resources for the FPGA project. The project includes several key modules such as the CPU, FPGA core, UART communication, and top-level integration.
+This repository contains the Verilog files and related resources for the FPGA subfolder of the overall project. The project includes several key modules such as the CPU, FPGA core, UART communication, and top-level integration.
+
 ___
 ![FPGAdiagram](https://github.com/HermiTech-LLC/Morty/blob/main/Images/FPGAdiagram.PNG)
 ___
+
 ## Files and Modules
 
 ### `cpu.v`
@@ -64,3 +66,7 @@ This file defines the `uart_comm` module, which handles UART communication betwe
   - `data_out`: Data output signal
   - `uart_tx`: UART transmit signal
   - `error_flags`: Error flag signals
+
+___
+
+Note: For final draft production refinement assistance, consider integrating professional FPGA design services like those offered by [Fidus](https://info.fidus.com/lp-fpga-design-services?creative=696376933833&keyword=fpga%20design%20firm&matchtype=p&network=g&device=m&utm_source=696376933833&utm_medium=g&utm_term=fpga%20design%20firm&utm_content=m&utm_campaign=21181582721&utm_term=fpga%20design%20firm&utm_campaign=Search+%7C+Generic+%7C+Services&utm_source=adwords&utm_medium=ppc&hsa_acc=9000272931&hsa_cam=21181582721&hsa_grp=159600839686&hsa_ad=696376933833&hsa_src=g&hsa_tgt=kwd-414193125515&hsa_kw=fpga%20design%20firm&hsa_mt=p&hsa_net=adwords&hsa_ver=3&gad_source=1&gbraid=0AAAAACxcqE3NiUNvQ3gzuArYRaK4tG-25&gclid=CjwKCAjwnei0BhB-EiwAA2xuBvVj1Cp6dZias-pLGoSc0NX0SperLy1BU1TKF-iuC6H5jWIrXzkdSRoCHJIQAvD_BwE). This service is ideal for companies needing expertise in FPGA development to ensure high-quality, reliable solutions for complex design needs.
