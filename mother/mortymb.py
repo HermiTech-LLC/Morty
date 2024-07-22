@@ -148,21 +148,23 @@ def main():
         ("U19", "Clock_Gen", "Clock_Footprint", 45, 20),
     ]
 
+    component_refs = {}
     for ref, value, footprint, x, y in components:
         component = add_component(ref, value, footprint, x, y)
+        component_refs[ref] = component
         create_symbol_file(ref, project_directory)
 
     # Define power supply nets and connect components
     power_nets = {
         'VCC': [
-            ('U1', 'VCC'), ('U2', 'VCC'), ('U3', 'VCC'), ('U4', 'VCC'),
-            ('U10', 'VCC'), ('U12', 'VCC'), ('U15', 'VCC'), ('U17', 'VCC'),
-            ('U19', 'VCC')
+            component_refs['U1'][1], component_refs['U2'][1], component_refs['U3'][1], component_refs['U4'][1],
+            component_refs['U10'][1], component_refs['U12'][1], component_refs['U15'][1], component_refs['U17'][1],
+            component_refs['U19'][1]
         ],
         'GND': [
-            ('U1', 'GND'), ('U2', 'GND'), ('U3', 'GND'), ('U4', 'GND'),
-            ('U10', 'GND'), ('U12', 'GND'), ('U15', 'GND'), ('U17', 'GND'),
-            ('U19', 'GND')
+            component_refs['U1'][2], component_refs['U2'][2], component_refs['U3'][2], component_refs['U4'][2],
+            component_refs['U10'][2], component_refs['U12'][2], component_refs['U15'][2], component_refs['U17'][2],
+            component_refs['U19'][2]
         ]
     }
 
@@ -174,8 +176,8 @@ def main():
         'U1', 'U2', 'U3', 'U12', 'U15', 'U17', 'U19', 'U4'
     ]
     for component_ref in decoupling_components:
-        component = globals()[component_ref]
-        add_decoupling_caps(component, 'VCC', globals()['GND'])
+        component = component_refs[component_ref]
+        add_decoupling_caps(component, 'VCC', component_refs['U10'][2])
 
     # Save the KiCad project file
     save_kicad_schematic(tree, schematic_file_path)
@@ -186,6 +188,9 @@ def main():
     ]
 
     create_netlist_file(netlist, netlist_file_path)
+
+    # Perform ERC
+    ERC()
 
 if __name__ == "__main__":
     main()
