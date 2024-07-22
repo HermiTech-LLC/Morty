@@ -143,7 +143,7 @@ def main():
     add_decoupling_caps(tree, 'fpga', 'VCC', 'GND')
 
     # Save the modified gEDA project file
-    save_geda_file(tree, "modified_geda_project.sch")
+    save_geda_file(tree, "morty.sch")
 
 if __name__ == "__main__":
     main()
