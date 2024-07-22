@@ -1,2 +1,0 @@
-VCC cpu/VCC ram1/VCC ram2/VCC fpga/VCC pmic/VCC usb_ctrl/VCC eth_ctrl/VCC sata_ctrl/VCC clock_gen/VCC
-GND cpu/GND ram1/GND ram2/GND fpga/GND pmic/GND usb_ctrl/GND eth_ctrl/GND sata_ctrl/GND clock_gen/GND
