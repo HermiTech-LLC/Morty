@@ -43,7 +43,7 @@ This project implements a bipedal humanoid control system using a Physics-Inform
 - **`cpu.v`**: Verilog module for the CPU.
 - **`fpga.v`**: Verilog module for the FPGA.
 - **`main.py`**: Script to compile the Verilog modules and run the ROS node.
-- **`mortymb.py`**: Defines the electronic components and connections for the robot’s motherboard using `skidl`.
+- **`mortymb.py`**: Defines the electronic components and connections for the robot’s motherboard using `gEDA`.
 - **`README.md`**: This file.
 
 ## Dependencies
@@ -53,7 +53,7 @@ This project implements a bipedal humanoid control system using a Physics-Inform
 - PyTorch
 - scikit-learn
 - iverilog (for Verilog compilation)
-- skidl (for electronic design)
+- gEDA (for electronic design)
 
 ## Setup
 
@@ -63,7 +63,7 @@ Ensure all dependencies are installed using the following commands:
 ```sh
 sudo apt-get install ros-humble-desktop-full
 sudo apt-get install iverilog
-pip install torch scikit-learn skidl
+pip install torch scikit-learn geda
 ```
 
 ### Compile the Verilog Modules
