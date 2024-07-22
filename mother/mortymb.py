@@ -16,12 +16,14 @@ def find_lib_path():
 
 # Create a new KiCad schematic file
 def create_kicad_schematic():
-    root = etree.Element("kicad_sch")
-    version = etree.SubElement(root, "version")
-    version.text = "20211014"
+    root = etree.Element("kicad_sch", version="20200310")
+    etree.SubElement(root, "host", tool="eeschema", version="(5.99.0-1467-g4b4952b09)")
+    etree.SubElement(root, "page").text = "A3"
 
-    paper = etree.SubElement(root, "paper")
-    paper.text = "A4"
+    title_block = etree.SubElement(root, "title_block")
+    etree.SubElement(title_block, "title").text = "Morty Project"
+    etree.SubElement(title_block, "company").text = "HermiTech"
+    etree.SubElement(title_block, "rev").text = "1"
 
     return etree.ElementTree(root)
 
@@ -37,28 +39,17 @@ def save_kicad_schematic(tree, file_path):
 # Add component to the schematic
 def add_component(tree, ref, value, footprint, x, y):
     root = tree.getroot()
-    components = root.find(".//components")
-    if components is None:
-        components = etree.Element("components")
-        root.append(components)
+    lib_symbols = root.find(".//lib_symbols")
+    if lib_symbols is None:
+        lib_symbols = etree.Element("lib_symbols")
+        root.append(lib_symbols)
 
-    component = etree.Element("comp")
-    component.set("ref", ref)
+    symbol = etree.Element("symbol", ref=ref)
+    etree.SubElement(symbol, "value").text = value
+    etree.SubElement(symbol, "footprint").text = footprint
+    etree.SubElement(symbol, "at", x=str(x), y=str(y))
+    lib_symbols.append(symbol)
 
-    value_element = etree.Element("value")
-    value_element.text = value
-    component.append(value_element)
-
-    footprint_element = etree.Element("footprint")
-    footprint_element.text = footprint
-    component.append(footprint_element)
-
-    placement = etree.Element("placement")
-    placement.set("x", str(x))
-    placement.set("y", str(y))
-    component.append(placement)
-
-    components.append(component)
     print(f"Component {ref} added at ({x}, {y}).")
 
 # Create a net and connect components
@@ -80,7 +71,6 @@ def create_and_connect_net(tree, net_name, connections):
 
     nets.append(net)
     print(f"Net {net_name} created with connections: {connections}")
-
 # Add decoupling capacitors
 def add_decoupling_caps(tree, component_ref, pin_name, gnd, num_caps=2):
     caps = []
@@ -112,10 +102,11 @@ def create_netlist_file(netlist, file_path):
     with open(file_path, 'w') as f:
         f.write(netlist_content)
     print(f"Netlist file created: {file_path}")
+
 def main():
     project_directory = "kicad_project"
     os.makedirs(project_directory, exist_ok=True)
-    schematic_file_path = os.path.join(project_directory, "morty.sch")
+    schematic_file_path = os.path.join(project_directory, "morty.kicad_sch")
     netlist_file_path = os.path.join(project_directory, "morty.net")
 
     tree = create_kicad_schematic()
