@@ -12,19 +12,13 @@ def find_geda_lib_path():
             return path
     return None
 
-geda_symbol_dir = find_geda_lib_path()
-if not geda_symbol_dir:
-    print("ERROR: gEDA library path not found.")
-    exit(1)
+# Create a new gEDA schematic file
+def create_geda_file():
+    root = etree.Element("schematic")
+    tree = etree.ElementTree(root)
+    return tree
 
-def load_geda_file(file_path):
-    try:
-        tree = etree.parse(file_path)
-        return tree
-    except Exception as e:
-        print(f"Error loading gEDA file: {e}")
-        return None
-
+# Save gEDA file
 def save_geda_file(tree, file_path):
     try:
         with open(file_path, 'wb') as file:
@@ -33,6 +27,7 @@ def save_geda_file(tree, file_path):
     except Exception as e:
         print(f"Error saving gEDA file: {e}")
 
+# Add component to the schematic
 def add_component(tree, component_name, x, y):
     root = tree.getroot()
     components = root.find(".//components")
@@ -47,11 +42,13 @@ def add_component(tree, component_name, x, y):
     components.append(new_component)
     print(f"Component {component_name} added at ({x}, {y}).")
 
+# Create a new net
 def create_net(name):
     net = etree.Element("net")
     net.set("name", name)
     return net
 
+# Connect components through a net
 def connect_components(tree, net, component_pins):
     for component, pin in component_pins:
         connection = etree.Element("connection")
@@ -66,6 +63,7 @@ def connect_components(tree, net, component_pins):
     nets.append(net)
     print(f"Net {net.get('name')} created with connections: {component_pins}")
 
+# Add decoupling capacitors
 def add_decoupling_caps(tree, component_name, pin_name, gnd, num_caps=2):
     caps = []
     for i in range(num_caps):
@@ -75,11 +73,35 @@ def add_decoupling_caps(tree, component_name, pin_name, gnd, num_caps=2):
         connect_components(tree, create_net(cap_name), [(cap_name, '1'), (component_name, pin_name), (cap_name, '2'), (gnd, '')])
     return caps
 
+# Create a symbol file for the component
+def create_symbol_file(component_name, directory):
+    symbol_file_path = os.path.join(directory, f"{component_name}.sym")
+    symbol_content = f"""v 20210605 1
+C {component_name}
+{
+    T 0 0 5 10 1 1 0 0 1
+    T 0 0 5 10 1 1 0 0 1
+    L 0 0 100 100
+}
+"""
+    with open(symbol_file_path, 'w') as f:
+        f.write(symbol_content)
+    print(f"Symbol file created: {symbol_file_path}")
+
+# Create a netlist file
+def create_netlist_file(netlist, file_path):
+    netlist_content = "\n".join(f"{net['name']} {' '.join(f'{c}/{p}' for c, p in net['connections'])}" for net in netlist)
+    with open(file_path, 'w') as f:
+        f.write(netlist_content)
+    print(f"Netlist file created: {file_path}")
+
 def main():
-    file_path = "morty.sch"
-    tree = load_geda_file(file_path)
-    if tree is None:
-        return
+    project_directory = "geda_project"
+    os.makedirs(project_directory, exist_ok=True)
+    schematic_file_path = os.path.join(project_directory, "morty.sch")
+    netlist_file_path = os.path.join(project_directory, "morty.net")
+
+    tree = create_geda_file()
 
     # Define components and add them to the schematic
     components = [
@@ -106,6 +128,7 @@ def main():
 
     for component, x, y in components:
         add_component(tree, component, x, y)
+        create_symbol_file(component, project_directory)
 
     # Define power supply nets
     power_nets = {
@@ -143,7 +166,14 @@ def main():
     add_decoupling_caps(tree, 'fpga', 'VCC', 'GND')
 
     # Save the modified gEDA project file
-    save_geda_file(tree, "morty.sch")
+    save_geda_file(tree, schematic_file_path)
+
+    # Create netlist
+    netlist = [
+        {'name': 'VCC', 'connections': [('cpu', 'VCC'), ('ram1', 'VCC'), ('ram2', 'VCC'), ('fpga', 'VCC'), ('pmic', 'VCC'), ('usb_ctrl', 'VCC'), ('eth_ctrl', 'VCC'), ('sata_ctrl', 'VCC'), ('clock_gen', 'VCC')]},
+        {'name': 'GND', 'connections': [('cpu', 'GND'), ('ram1', 'GND'), ('ram2', 'GND'), ('fpga', 'GND'), ('pmic', 'GND'), ('usb_ctrl', 'GND'), ('eth_ctrl', 'GND'), ('sata_ctrl', 'GND'), ('clock_gen', 'GND')]}
+    ]
+    create_netlist_file(netlist, netlist_file_path)
 
 if __name__ == "__main__":
     main()
