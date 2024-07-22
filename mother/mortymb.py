@@ -76,7 +76,7 @@ def add_decoupling_caps(tree, component_name, pin_name, gnd, num_caps=2):
     return caps
 
 def main():
-    file_path = "your_geda_project.sch"
+    file_path = "morty.sch"
     tree = load_geda_file(file_path)
     if tree is None:
         return
