@@ -145,9 +145,10 @@ ___
   - Runs the `rospinn.py` script using `rosrun`.
 ___
 ## Schematics and assembly
+
 ### `mortymb.py`
 
-- **Purpose**: Defines and connects the electronic components of the robot’s motherboard using `skidl`.
+- **Purpose**: Defines and connects the electronic components of the robot’s motherboard using `lxml` to manipulate gEDA files.
 - **Functionality**:
   - Defines power supply nets and various components (CPU, RAM, FPGA, PCIe slots, GPUs, USB, Ethernet, and SATA controllers).
   - Establishes connections between components.
@@ -155,7 +156,9 @@ ___
   - Generates netlist, schematic, and PCB layout files.
 
 ## Appendix
+
 *will be revised*
+
 ### Power and Ground Connections
 
 - **GND**: Ground.
