@@ -6,13 +6,15 @@ from lxml import etree
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Function to find library path dynamically
+# Function to find library path dynamically using environment variables
 def find_lib_path():
     paths = [
-        "/usr/share/gEDA/sym",
-        os.path.expanduser("~/.gEDA/sym"),
-        "/usr/share/kicad/library",
-        os.path.expanduser("~/.kicad/library"),
+        os.getenv('KICAD6_3DMODEL_DIR', "/usr/share/kicad/3dmodels"),
+        os.getenv('KICAD6_3RD_PARTY', "/home/loq1/.local/share/kicad/6.0/3rdparty"),
+        os.getenv('KICAD6_FOOTPRINT_DIR', "/usr/share/kicad/footprints"),
+        os.getenv('KICAD6_SYMBOL_DIR', "/usr/share/kicad/symbols"),
+        os.getenv('KICAD6_TEMPLATE_DIR', "/usr/share/kicad/template"),
+        os.getenv('KICAD_USER_TEMPLATE_DIR', "/home/loq1/.local/share/kicad/6.0/template"),
     ]
     for path in paths:
         if os.path.exists(path):
@@ -106,7 +108,6 @@ C {component_name}
     except Exception as e:
         logging.error(f"Error creating symbol file for {component_name}: {e}")
         raise
-
 # Create a netlist file
 def create_netlist_file(netlist, file_path):
     try:
@@ -117,6 +118,7 @@ def create_netlist_file(netlist, file_path):
     except Exception as e:
         logging.error(f"Error creating netlist file: {e}")
         raise
+
 def main():
     project_directory = "kicad_project"
     os.makedirs(project_directory, exist_ok=True)
