@@ -87,6 +87,7 @@ def add_decoupling_caps(component, pin_name, gnd, num_caps=2):
     except Exception as e:
         logging.error(f"Error adding decoupling capacitors for {component.ref}: {e}")
         raise
+
 # Create a symbol file for the component
 def create_symbol_file(component_name, directory):
     try:
@@ -116,7 +117,6 @@ def create_netlist_file(netlist, file_path):
     except Exception as e:
         logging.error(f"Error creating netlist file: {e}")
         raise
-
 def main():
     project_directory = "kicad_project"
     os.makedirs(project_directory, exist_ok=True)
