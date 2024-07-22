@@ -1,5 +1,6 @@
 import os
 import logging
+from skidl import Part, Net, ERC
 from lxml import etree
 
 # Configure logging
@@ -51,44 +52,41 @@ def save_kicad_schematic(tree, file_path):
         logging.error(f"Error saving KiCad schematic file: {e}")
         raise
 
-# Add component to the schematic
-def add_component(tree, ref, value, footprint, x, y):
+# Add component using SKiDL
+def add_component(ref, value, footprint, x, y):
     try:
-        root = tree.getroot()
-        lib_symbols = root.find(".//lib_symbols")
-        symbol = etree.SubElement(lib_symbols, "symbol", ref=ref)
-        etree.SubElement(symbol, "value").text = value
-        etree.SubElement(symbol, "footprint").text = footprint
-        etree.SubElement(symbol, "at", x=str(x), y=str(y))
-        etree.SubElement(symbol, "uuid").text = os.urandom(16).hex()
+        component = Part('device', value, footprint=footprint, ref=ref)
+        component.place(x, y)
         logging.info(f"Component {ref} added at ({x}, {y}).")
+        return component
     except Exception as e:
         logging.error(f"Error adding component {ref}: {e}")
         raise
 
-# Create a net and connect components
-def create_and_connect_net(tree, net_name, connections):
+# Create a net and connect components using SKiDL
+def create_and_connect_net(net_name, connections):
     try:
-        root = tree.getroot()
-        nets = root.find(".//nets")
-        net = etree.SubElement(nets, "net", name=net_name)
+        net = Net(net_name)
         for conn in connections:
-            node = etree.SubElement(net, "node", ref=conn[0], pin=conn[1])
+            net += conn
         logging.info(f"Net {net_name} created with connections: {connections}")
+        return net
     except Exception as e:
         logging.error(f"Error creating net {net_name}: {e}")
         raise
-
-# Add decoupling capacitors
-def add_decoupling_caps(tree, component_ref, pin_name, gnd, num_caps=2):
+# Add decoupling capacitors using SKiDL
+def add_decoupling_caps(component, pin_name, gnd, num_caps=2):
     try:
         for i in range(num_caps):
-            cap_ref = f"C_{component_ref}_{pin_name}_{i}"
-            add_component(tree, cap_ref, "C", "Capacitor_SMD", 0, 0)
-            create_and_connect_net(tree, cap_ref, [(cap_ref, '1'), (component_ref, pin_name), (cap_ref, '2'), (gnd, '')])
+            cap_ref = f"C_{component.ref}_{pin_name}_{i}"
+            cap = Part('device', 'C', footprint="Capacitor_SMD", ref=cap_ref)
+            cap[1] += component[pin_name]
+            cap[2] += gnd
+            logging.info(f"Decoupling capacitor {cap_ref} added.")
     except Exception as e:
-        logging.error(f"Error adding decoupling capacitors for {component_ref}: {e}")
+        logging.error(f"Error adding decoupling capacitors for {component.ref}: {e}")
         raise
+
 # Create a symbol file for the component
 def create_symbol_file(component_name, directory):
     try:
@@ -111,7 +109,7 @@ C {component_name}
 # Create a netlist file
 def create_netlist_file(netlist, file_path):
     try:
-        netlist_content = "\n".join(f"{net['name']} {' '.join(f'{c}/{p}' for c, p in net['connections'])}" for net in netlist)
+        netlist_content = "\n".join(f"{net.name} {' '.join(f'{c.ref}/{p}' for c, p in net.get_pins())}" for net in netlist)
         with open(file_path, 'w') as f:
             f.write(netlist_content)
         logging.info(f"Netlist file created: {file_path}")
@@ -151,7 +149,7 @@ def main():
     ]
 
     for ref, value, footprint, x, y in components:
-        add_component(tree, ref, value, footprint, x, y)
+        component = add_component(ref, value, footprint, x, y)
         create_symbol_file(ref, project_directory)
 
     # Define power supply nets and connect components
@@ -169,24 +167,24 @@ def main():
     }
 
     for net_name, connections in power_nets.items():
-        create_and_connect_net(tree, net_name, connections)
+        create_and_connect_net(net_name, connections)
 
     # Connect decoupling capacitors
     decoupling_components = [
         'U1', 'U2', 'U3', 'U12', 'U15', 'U17', 'U19', 'U4'
     ]
-    for component in decoupling_components:
-        add_decoupling_caps(tree, component, 'VCC', 'GND')
+    for component_ref in decoupling_components:
+        component = globals()[component_ref]
+        add_decoupling_caps(component, 'VCC', globals()['GND'])
 
     # Save the KiCad project file
     save_kicad_schematic(tree, schematic_file_path)
 
     # Create netlist
     netlist = [
-        {'name': 'VCC', 'connections': [('U1', 'VCC'), ('U2', 'VCC'), ('U3', 'VCC'), ('U4', 'VCC'), ('U10', 'VCC'), ('U12', 'VCC'), ('U15', 'VCC'), ('U17', 'VCC'), ('U19', 'VCC')]},
-        {'name': 'GND', 'connections': [('U1', 'GND'), ('U2', 'GND'), ('U3', 'GND'), ('U4', 'GND'), ('U10', 'GND'), ('U12', 'GND'), ('U15', 'GND'), ('U17', 'GND'), ('U19', 'GND')]}
+        Net('VCC'), Net('GND')
     ]
-    
+
     create_netlist_file(netlist, netlist_file_path)
 
 if __name__ == "__main__":
