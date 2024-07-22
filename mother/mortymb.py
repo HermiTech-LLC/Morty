@@ -78,11 +78,11 @@ def create_symbol_file(component_name, directory):
     symbol_file_path = os.path.join(directory, f"{component_name}.sym")
     symbol_content = f"""v 20210605 1
 C {component_name}
-{
+{{
     T 0 0 5 10 1 1 0 0 1
     T 0 0 5 10 1 1 0 0 1
     L 0 0 100 100
-}
+}}
 """
     with open(symbol_file_path, 'w') as f:
         f.write(symbol_content)
