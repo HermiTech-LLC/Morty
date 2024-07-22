@@ -74,6 +74,7 @@ def create_and_connect_net(net_name, connections):
     except Exception as e:
         logging.error(f"Error creating net {net_name}: {e}")
         raise
+
 # Add decoupling capacitors using SKiDL
 def add_decoupling_caps(component, pin_name, gnd, num_caps=2):
     try:
@@ -86,7 +87,6 @@ def add_decoupling_caps(component, pin_name, gnd, num_caps=2):
     except Exception as e:
         logging.error(f"Error adding decoupling capacitors for {component.ref}: {e}")
         raise
-
 # Create a symbol file for the component
 def create_symbol_file(component_name, directory):
     try:
