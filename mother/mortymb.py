@@ -1,7 +1,11 @@
 import os
+import logging
 from lxml import etree
 
-# Function to find library path dynamically (originally for gEDA, adapted for this script)
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Function to find library path dynamically
 def find_lib_path():
     paths = [
         "/usr/share/gEDA/sym",
@@ -11,80 +15,85 @@ def find_lib_path():
     ]
     for path in paths:
         if os.path.exists(path):
+            logging.info(f"Library path found: {path}")
             return path
+    logging.warning("Library path not found")
     return None
 
 # Create a new KiCad schematic file
 def create_kicad_schematic():
-    root = etree.Element("kicad_sch", version="20200310")
-    etree.SubElement(root, "host", tool="eeschema", version="(5.99.0-1467-g4b4952b09)")
-    etree.SubElement(root, "page").text = "A3"
+    try:
+        root = etree.Element("kicad_sch", version="20200310")
+        etree.SubElement(root, "host", tool="eeschema", version="(5.99.0-1467-g4b4952b09)")
+        etree.SubElement(root, "page").text = "A3"
 
-    title_block = etree.SubElement(root, "title_block")
-    etree.SubElement(title_block, "title").text = "Morty Project"
-    etree.SubElement(title_block, "company").text = "HermiTech"
-    etree.SubElement(title_block, "rev").text = "1"
+        title_block = etree.SubElement(root, "title_block")
+        etree.SubElement(title_block, "title").text = "Morty Project"
+        etree.SubElement(title_block, "company").text = "HermiTech"
+        etree.SubElement(title_block, "rev").text = "1"
 
-    return etree.ElementTree(root)
+        etree.SubElement(root, "lib_symbols")
+        etree.SubElement(root, "nets")
+
+        logging.info("KiCad schematic structure created successfully")
+        return etree.ElementTree(root)
+    except Exception as e:
+        logging.error(f"Error creating KiCad schematic: {e}")
+        raise
 
 # Save KiCad schematic file
 def save_kicad_schematic(tree, file_path):
     try:
         with open(file_path, 'wb') as file:
             tree.write(file, pretty_print=True, xml_declaration=True, encoding="UTF-8")
-        print(f"File saved successfully: {file_path}")
+        logging.info(f"File saved successfully: {file_path}")
     except Exception as e:
-        print(f"Error saving KiCad schematic file: {e}")
+        logging.error(f"Error saving KiCad schematic file: {e}")
+        raise
 
 # Add component to the schematic
 def add_component(tree, ref, value, footprint, x, y):
-    root = tree.getroot()
-    lib_symbols = root.find(".//lib_symbols")
-    if lib_symbols is None:
-        lib_symbols = etree.Element("lib_symbols")
-        root.append(lib_symbols)
-
-    symbol = etree.Element("symbol", ref=ref)
-    etree.SubElement(symbol, "value").text = value
-    etree.SubElement(symbol, "footprint").text = footprint
-    etree.SubElement(symbol, "at", x=str(x), y=str(y))
-    lib_symbols.append(symbol)
-
-    print(f"Component {ref} added at ({x}, {y}).")
+    try:
+        root = tree.getroot()
+        lib_symbols = root.find(".//lib_symbols")
+        symbol = etree.SubElement(lib_symbols, "symbol", ref=ref)
+        etree.SubElement(symbol, "value").text = value
+        etree.SubElement(symbol, "footprint").text = footprint
+        etree.SubElement(symbol, "at", x=str(x), y=str(y))
+        etree.SubElement(symbol, "uuid").text = os.urandom(16).hex()
+        logging.info(f"Component {ref} added at ({x}, {y}).")
+    except Exception as e:
+        logging.error(f"Error adding component {ref}: {e}")
+        raise
 
 # Create a net and connect components
 def create_and_connect_net(tree, net_name, connections):
-    root = tree.getroot()
-    nets = root.find(".//nets")
-    if nets is None:
-        nets = etree.Element("nets")
-        root.append(nets)
+    try:
+        root = tree.getroot()
+        nets = root.find(".//nets")
+        net = etree.SubElement(nets, "net", name=net_name)
+        for conn in connections:
+            node = etree.SubElement(net, "node", ref=conn[0], pin=conn[1])
+        logging.info(f"Net {net_name} created with connections: {connections}")
+    except Exception as e:
+        logging.error(f"Error creating net {net_name}: {e}")
+        raise
 
-    net = etree.Element("net")
-    net.set("name", net_name)
-
-    for conn in connections:
-        node = etree.Element("node")
-        node.set("ref", conn[0])
-        node.set("pin", conn[1])
-        net.append(node)
-
-    nets.append(net)
-    print(f"Net {net_name} created with connections: {connections}")
 # Add decoupling capacitors
 def add_decoupling_caps(tree, component_ref, pin_name, gnd, num_caps=2):
-    caps = []
-    for i in range(num_caps):
-        cap_ref = f"C_{component_ref}_{pin_name}_{i}"
-        add_component(tree, cap_ref, "C", "Capacitor_SMD", 0, 0)  # Placeholder coordinates
-        caps.append((cap_ref, '1'))  # Assuming '1' is the power pin of the capacitor
-        create_and_connect_net(tree, cap_ref, [(cap_ref, '1'), (component_ref, pin_name), (cap_ref, '2'), (gnd, '')])
-    return caps
-
-# Create a symbol file for the component (from gEDA)
+    try:
+        for i in range(num_caps):
+            cap_ref = f"C_{component_ref}_{pin_name}_{i}"
+            add_component(tree, cap_ref, "C", "Capacitor_SMD", 0, 0)
+            create_and_connect_net(tree, cap_ref, [(cap_ref, '1'), (component_ref, pin_name), (cap_ref, '2'), (gnd, '')])
+    except Exception as e:
+        logging.error(f"Error adding decoupling capacitors for {component_ref}: {e}")
+        raise
+# Create a symbol file for the component
 def create_symbol_file(component_name, directory):
-    symbol_file_path = os.path.join(directory, f"{component_name}.sym")
-    symbol_content = f"""v 20210605 1
+    try:
+        symbol_file_path = os.path.join(directory, f"{component_name}.sym")
+        symbol_content = f"""v 20210605 1
 C {component_name}
 {{
     T 0 0 5 10 1 1 0 0 1
@@ -92,16 +101,23 @@ C {component_name}
     L 0 0 100 100
 }}
 """
-    with open(symbol_file_path, 'w') as f:
-        f.write(symbol_content)
-    print(f"Symbol file created: {symbol_file_path}")
+        with open(symbol_file_path, 'w') as f:
+            f.write(symbol_content)
+        logging.info(f"Symbol file created: {symbol_file_path}")
+    except Exception as e:
+        logging.error(f"Error creating symbol file for {component_name}: {e}")
+        raise
 
-# Create a netlist file (from gEDA)
+# Create a netlist file
 def create_netlist_file(netlist, file_path):
-    netlist_content = "\n".join(f"{net['name']} {' '.join(f'{c}/{p}' for c, p in net['connections'])}" for net in netlist)
-    with open(file_path, 'w') as f:
-        f.write(netlist_content)
-    print(f"Netlist file created: {file_path}")
+    try:
+        netlist_content = "\n".join(f"{net['name']} {' '.join(f'{c}/{p}' for c, p in net['connections'])}" for net in netlist)
+        with open(file_path, 'w') as f:
+            f.write(netlist_content)
+        logging.info(f"Netlist file created: {file_path}")
+    except Exception as e:
+        logging.error(f"Error creating netlist file: {e}")
+        raise
 
 def main():
     project_directory = "kicad_project"
