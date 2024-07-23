@@ -120,7 +120,7 @@ def create_netlist_file(netlist, file_path):
         raise
 
 def main():
-    project_directory = "kicad_project"
+    project_directory = "Morty_Project"
     os.makedirs(project_directory, exist_ok=True)
     schematic_file_path = os.path.join(project_directory, "morty.kicad_sch")
     netlist_file_path = os.path.join(project_directory, "morty.net")
