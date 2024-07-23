@@ -6,15 +6,23 @@ from lxml import etree
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+# Automatically set environment variables
+os.environ['KICAD6_3DMODEL_DIR'] = "/usr/share/kicad/3dmodels"
+os.environ['KICAD6_3RD_PARTY'] = "/home/loq1/.local/share/kicad/6.0/3rdparty"
+os.environ['KICAD6_FOOTPRINT_DIR'] = "/usr/share/kicad/footprints"
+os.environ['KICAD6_SYMBOL_DIR'] = "/usr/share/kicad/symbols"
+os.environ['KICAD6_TEMPLATE_DIR'] = "/usr/share/kicad/template"
+os.environ['KICAD_USER_TEMPLATE_DIR'] = "/home/loq1/.local/share/kicad/6.0/template"
+
 # Function to find library path dynamically using environment variables
 def find_lib_path():
     paths = [
-        os.getenv('KICAD6_3DMODEL_DIR', "/usr/share/kicad/3dmodels"),
-        os.getenv('KICAD6_3RD_PARTY', "/home/loq1/.local/share/kicad/6.0/3rdparty"),
-        os.getenv('KICAD6_FOOTPRINT_DIR', "/usr/share/kicad/footprints"),
-        os.getenv('KICAD6_SYMBOL_DIR', "/usr/share/kicad/symbols"),
-        os.getenv('KICAD6_TEMPLATE_DIR', "/usr/share/kicad/template"),
-        os.getenv('KICAD_USER_TEMPLATE_DIR', "/home/loq1/.local/share/kicad/6.0/template"),
+        os.getenv('KICAD6_3DMODEL_DIR'),
+        os.getenv('KICAD6_3RD_PARTY'),
+        os.getenv('KICAD6_FOOTPRINT_DIR'),
+        os.getenv('KICAD6_SYMBOL_DIR'),
+        os.getenv('KICAD6_TEMPLATE_DIR'),
+        os.getenv('KICAD_USER_TEMPLATE_DIR'),
     ]
     for path in paths:
         if os.path.exists(path):
@@ -108,10 +116,14 @@ C {component_name}
     except Exception as e:
         logging.error(f"Error creating symbol file for {component_name}: {e}")
         raise
+
 # Create a netlist file
 def create_netlist_file(netlist, file_path):
     try:
-        netlist_content = "\n".join(f"{net.name} {' '.join(f'{c.ref}/{p}' for c, p in net.get_pins())}" for net in netlist)
+        netlist_content = "\n".join(
+            f"{net.name} {' '.join(f'{c.ref}/{p}' for c, p in net.get_pins())}"
+            for net in netlist
+        )
         with open(file_path, 'w') as f:
             f.write(netlist_content)
         logging.info(f"Netlist file created: {file_path}")
@@ -125,74 +137,78 @@ def main():
     schematic_file_path = os.path.join(project_directory, "morty.kicad_sch")
     netlist_file_path = os.path.join(project_directory, "morty.net")
 
-    tree = create_kicad_schematic()
+    try:
+        tree = create_kicad_schematic()
 
-    # Define components and add them to the schematic
-    components = [
-        ("U1", "CPU", "CPU_Footprint", 20, 50),
-        ("U2", "RAM1", "RAM_Footprint", 40, 60),
-        ("U3", "RAM2", "RAM_Footprint", 60, 60),
-        ("U4", "FPGA", "FPGA_Footprint", 50, 50),
-        ("U5", "UART_Comm", "UART_Footprint", 70, 40),
-        ("U6", "PCIe_Slot1", "PCIe_Footprint", 30, 80),
-        ("U7", "PCIe_Slot2", "PCIe_Footprint", 40, 80),
-        ("U8", "GPU1", "GPU_Footprint", 35, 90),
-        ("U9", "GPU2", "GPU_Footprint", 45, 90),
-        ("U10", "PMIC", "PMIC_Footprint", 10, 40),
-        ("U11", "ATX_Power", "Power_Footprint", 10, 30),
-        ("U12", "USB_Ctrl", "USB_Footprint", 70, 30),
-        ("U13", "USB_Port1", "USB_Port_Footprint", 80, 20),
-        ("U14", "USB_Port2", "USB_Port_Footprint", 90, 20),
-        ("U15", "ETH_Ctrl", "ETH_Footprint", 80, 50),
-        ("U16", "ETH_Port", "ETH_Port_Footprint", 90, 50),
-        ("U17", "SATA_Ctrl", "SATA_Footprint", 50, 20),
-        ("U18", "SATA_Port1", "SATA_Port_Footprint", 55, 10),
-        ("U19", "Clock_Gen", "Clock_Footprint", 45, 20),
-    ]
-
-    component_refs = {}
-    for ref, value, footprint, x, y in components:
-        component = add_component(ref, value, footprint, x, y)
-        component_refs[ref] = component
-        create_symbol_file(ref, project_directory)
-
-    # Define power supply nets and connect components
-    power_nets = {
-        'VCC': [
-            component_refs['U1'][1], component_refs['U2'][1], component_refs['U3'][1], component_refs['U4'][1],
-            component_refs['U10'][1], component_refs['U12'][1], component_refs['U15'][1], component_refs['U17'][1],
-            component_refs['U19'][1]
-        ],
-        'GND': [
-            component_refs['U1'][2], component_refs['U2'][2], component_refs['U3'][2], component_refs['U4'][2],
-            component_refs['U10'][2], component_refs['U12'][2], component_refs['U15'][2], component_refs['U17'][2],
-            component_refs['U19'][2]
+        # Define components and add them to the schematic
+        components = [
+            ("U1", "CPU", "CPU_Footprint", 20, 50),
+            ("U2", "RAM1", "RAM_Footprint", 40, 60),
+            ("U3", "RAM2", "RAM_Footprint", 60, 60),
+            ("U4", "FPGA", "FPGA_Footprint", 50, 50),
+            ("U5", "UART_Comm", "UART_Footprint", 70, 40),
+            ("U6", "PCIe_Slot1", "PCIe_Footprint", 30, 80),
+            ("U7", "PCIe_Slot2", "PCIe_Footprint", 40, 80),
+            ("U8", "GPU1", "GPU_Footprint", 35, 90),
+            ("U9", "GPU2", "GPU_Footprint", 45, 90),
+            ("U10", "PMIC", "PMIC_Footprint", 10, 40),
+            ("U11", "ATX_Power", "Power_Footprint", 10, 30),
+            ("U12", "USB_Ctrl", "USB_Footprint", 70, 30),
+            ("U13", "USB_Port1", "USB_Port_Footprint", 80, 20),
+            ("U14", "USB_Port2", "USB_Port_Footprint", 90, 20),
+            ("U15", "ETH_Ctrl", "ETH_Footprint", 80, 50),
+            ("U16", "ETH_Port", "ETH_Port_Footprint", 90, 50),
+            ("U17", "SATA_Ctrl", "SATA_Footprint", 50, 20),
+            ("U18", "SATA_Port1", "SATA_Port_Footprint", 55, 10),
+            ("U19", "Clock_Gen", "Clock_Footprint", 45, 20),
         ]
-    }
 
-    for net_name, connections in power_nets.items():
-        create_and_connect_net(net_name, connections)
+        component_refs = {}
+        for ref, value, footprint, x, y in components:
+            component = add_component(ref, value, footprint, x, y)
+            component_refs[ref] = component
+            create_symbol_file(ref, project_directory)
 
-    # Connect decoupling capacitors
-    decoupling_components = [
-        'U1', 'U2', 'U3', 'U12', 'U15', 'U17', 'U19', 'U4'
-    ]
-    for component_ref in decoupling_components:
-        component = component_refs[component_ref]
-        add_decoupling_caps(component, 'VCC', component_refs['U10'][2])
+        # Define power supply nets and connect components
+        power_nets = {
+            'VCC': [
+                component_refs['U1'][1], component_refs['U2'][1], component_refs['U3'][1], component_refs['U4'][1],
+                component_refs['U10'][1], component_refs['U12'][1], component_refs['U15'][1], component_refs['U17'][1],
+                component_refs['U19'][1]
+            ],
+            'GND': [
+                component_refs['U1'][2], component_refs['U2'][2], component_refs['U3'][2], component_refs['U4'][2],
+                component_refs['U10'][2], component_refs['U12'][2], component_refs['U15'][2], component_refs['U17'][2],
+                component_refs['U19'][2]
+            ]
+        }
 
-    # Save the KiCad project file
-    save_kicad_schematic(tree, schematic_file_path)
+        for net_name, connections in power_nets.items():
+            create_and_connect_net(net_name, connections)
 
-    # Create netlist
-    netlist = [
-        Net('VCC'), Net('GND')
-    ]
+        # Connect decoupling capacitors
+        decoupling_components = [
+            'U1', 'U2', 'U3', 'U12', 'U15', 'U17', 'U19', 'U4'
+        ]
+        for component_ref in decoupling_components:
+            component = component_refs[component_ref]
+            add_decoupling_caps(component, 'VCC', component_refs['U10'][2])
 
-    create_netlist_file(netlist, netlist_file_path)
+        # Save the KiCad project file
+        save_kicad_schematic(tree, schematic_file_path)
 
-    # Perform ERC
-    ERC()
+        # Create netlist
+        netlist = [
+            Net('VCC'), Net('GND')
+        ]
+
+        create_netlist_file(netlist, netlist_file_path)
+
+        # Perform ERC
+        ERC()
+
+    except Exception as e:
+        logging.error(f"Error in main execution: {e}")
 
 if __name__ == "__main__":
     main()
