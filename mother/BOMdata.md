@@ -1,129 +1,96 @@
 # Parts Data Sheet
-*(noting again that this is most definately a board for a separate project.)*
+*(noting again that this is most definitely a board for a separate project.)*
 ___
 
 ## System Overview
 
-This advanced electronic system is designed for high-performance computing applications, integrating multiple CPUs, GPUs, an FPGA, and various controllers to support extensive peripheral connectivity. The system architecture is robust, with dedicated power management and decoupling capacitors to ensure stability and reliability.
+This advanced electronic system is designed for embedded and high-performance computing applications, integrating multiple key components, including a microcontroller, CPU, RAM, FPGA, and various controllers to support extensive peripheral connectivity. The system architecture is robust, with dedicated power management and decoupling capacitors to ensure stability and reliability.
 
 ---
 
 ## Component Specifications
 
-### Central Processing Unit (CPU)
-- **Model**: AMD Ryzen 9 7950X
+### Microcontroller
+- **Model**: ESP32-WROOM-32
 - **Quantity**: 1
-- **Footprint**: AM5
-- **Cost**: $750
+- **Footprint**: ESP32-WROOM-32
+- **Cost**: $5
+
+### Central Processing Unit (CPU)
+- **Model**: ATmega2560
+- **Quantity**: 1
+- **Footprint**: TQFP-100
+- **Cost**: $10
 
 ### Memory (RAM)
-- **Type**: DDR4 DIMM-288
-- **Quantity**: 2
-- **Capacity**: Not specified
-- **Footprint**: DIMM-288
-- **Cost**: $150 each
-
-### Field Programmable Gate Array (FPGA)
-- **Model**: Xilinx Spartan 6
+- **Model**: MT48LC16M16A2P-75
 - **Quantity**: 1
-- **Footprint**: BGA-256
-- **Cost**: $300
+- **Footprint**: TSOP-II-54
+- **Cost**: $15
 
-### UART Communication
-- **Type**: Custom UART Communication Module
+### Flash Memory
+- **Model**: W25Q64FVSSIG
 - **Quantity**: 1
-- **Footprint**: Not specified
-- **Cost**: $50
-
-### Peripheral Components
-
-#### PCIe Slots
-- **Type**: PCIe x16 Slot
-- **Quantity**: 6
-- **Footprint**: PCIEX16
-- **Cost**: $20 each
-
-#### Graphics Processing Units (GPUs)
-- **Model**: AMD Radeon RX
-- **Quantity**: 6
-- **Footprint**: BGA-256
-- **Cost**: $500 each
-
-#### Power Management IC (PMIC)
-- **Model**: TI TPS65217
-- **Quantity**: 1
-- **Footprint**: QFN-32
-- **Cost**: $5
-
-#### Power Connector
-- **Type**: 24-pin ATX Power Connector
-- **Quantity**: 1
-- **Footprint**: ATX-24
-- **Cost**: $10
-
-#### USB Controller
-- **Model**: NEC D720200
-- **Quantity**: 1
-- **Footprint**: QFN-64
-- **Cost**: $5
-
-#### USB Ports
-- **Type**: USB Type-A Port
-- **Quantity**: 4
-- **Footprint**: USB-A
-- **Cost**: $1 each
-
-#### Ethernet Controller
-- **Model**: Realtek RTL8111
-- **Quantity**: 1
-- **Footprint**: QFN-64
+- **Footprint**: SOIC-8
 - **Cost**: $2
 
-#### Ethernet Port
-- **Type**: RJ45 Ethernet Port
+### UART Communication
+- **Model**: MAX232
 - **Quantity**: 1
-- **Footprint**: RJ45
+- **Footprint**: SOIC-16
 - **Cost**: $1
 
-#### SATA Controller
-- **Model**: Marvell 88SE9215
+### Power Management IC (PMIC)
+- **Model**: TPS65217
 - **Quantity**: 1
-- **Footprint**: QFN-64
-- **Cost**: $10
+- **Footprint**: QFN-48
+- **Cost**: $5
 
-#### SATA Ports
-- **Type**: SATA Connector
-- **Quantity**: 4
-- **Footprint**: SATA
-- **Cost**: $1 each
+### USB Controller
+- **Model**: USB3320C-EZK
+- **Quantity**: 1
+- **Footprint**: QFN-24
+- **Cost**: $3
 
-#### Clock Generator
-- **Model**: IDT 5V9885
+### Ethernet Controller
+- **Model**: LAN8720
 - **Quantity**: 1
 - **Footprint**: QFN-32
-- **Cost**: $3
+- **Cost**: $2
+
+### Clock Generator
+- **Model**: SI5351A-B-GT
+- **Quantity**: 1
+- **Footprint**: QFN-20
+- **Cost**: $2
+
+### Tensor Processing Unit (TPU)
+- **Model**: Google Edge TPU
+- **Quantity**: 1
+- **Footprint**: BGA-256
+- **Cost**: $25
+
+### Field Programmable Gate Array (FPGA)
+- **Model**: Xilinx XC7A35T-1FTG256C
+- **Quantity**: 1
+- **Footprint**: BGA-256
+- **Cost**: $50
 
 ### Power Management
 
-#### Voltage Regulators
-- **Model**: TI TPS7A4501
-- **Quantity**: 8
-- **Footprint**: DPAK
-- **Cost**: $1 each
-
 #### Decoupling Capacitors
-- **Type**: 100nF Capacitors (0603 package)
+- **Type**: 100nF Capacitors (0805 package)
 - **Quantity**: 20
-- **Footprint**: 0603
+- **Footprint**: 0805
 - **Cost**: $0.1 each
 
 ---
 
 ## Cost Summary
 
-- **Total Components Cost**: $4,574
-- **Miscellaneous Costs**: $500 - $1,000
-- **Grand Total**: $5,074 - $5,574
+- **Total Components Cost**: $123.5
+- **Miscellaneous Costs**: $50 - $100
+- **Grand Total**: $173.5 - $223.5
 
 ---
 
