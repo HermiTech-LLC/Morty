@@ -1,5 +1,8 @@
 import os
 import subprocess
+import numpy as np
+from tpu import BipedalHumanoidPINN, physics_informed_loss, RLAgent, train
+from mother.Software.Firmware.rosnode import initialize_ros_node, subscribe_to_ros_topics, communicate_with_fpga
 
 def compile_verilog():
     """
@@ -31,7 +34,7 @@ def run_ros_pinn():
         subprocess.CalledProcessError: If there is an error during the ROS PINN execution process.
     """
     try:
-        subprocess.run(['rosrun', 'rospinn', 'rospinn.py'], check=True)
+        subprocess.run(['rosrun', 'rospinn', 'rospinn.py'], check=True, cwd='mother/Software/Firmware')
         print("ROS PINN node executed successfully.")
     except subprocess.CalledProcessError as e:
         print(f"Error during ROS PINN execution: {e}")
@@ -91,3 +94,27 @@ if __name__ == "__main__":
     # Run MicroPython script
     micropython_script_path = 'control_interface.py'  # Replace with actual script path
     run_micropython(micropython_script_path)
+
+    # Initialize ROS node and subscribe to topics
+    control_pub = initialize_ros_node()
+    subscribe_to_ros_topics()
+
+    # Initialize models and optimizers
+    pinn_model = BipedalHumanoidPINN()
+    rl_agent = RLAgent(input_dim=60, action_dim=60)
+    optimizer_pinn = optimizers.Adam(learning_rate=0.001)
+    optimizer_rl = optimizers.Adam(learning_rate=0.001)
+
+    # Replace 'inputs' with actual input data
+    inputs = np.random.rand(100, 60).astype(np.float32)  # Example input data
+    train(pinn_model, rl_agent, optimizer_pinn, optimizer_rl, inputs, num_epochs=1000)
+
+    # Initialize serial communication with FPGA
+    ser = serial.Serial('/dev/ttyUSB0', 9600)
+
+    # Example usage of communicate_with_fpga
+    sensor_data = np.random.rand(60).astype(np.float32)  # Example sensor data
+    control_signal = communicate_with_fpga(sensor_data)
+
+    # Run ROS node main loop
+    rospy.spin()
