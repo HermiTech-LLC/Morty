@@ -1,3 +1,5 @@
+# tpu.py
+
 import tensorflow as tf
 from tensorflow.keras import layers, models, optimizers
 import numpy as np
@@ -75,12 +77,6 @@ class RLAgent(models.Model):
         action_dist = tf.random.normal(action_mean.shape, mean=action_mean, stddev=tf.exp(self.log_std))
         return action_dist, tf.reduce_sum(tf.math.log(action_dist), axis=-1)
 
-# Initialize models and optimizers
-pinn_model = BipedalHumanoidPINN()
-rl_agent = RLAgent(input_dim=60, action_dim=60)
-optimizer_pinn = optimizers.Adam(learning_rate=0.001)
-optimizer_rl = optimizers.Adam(learning_rate=0.001)
-
 # Training Loop
 def train(pinn_model, rl_agent, optimizer_pinn, optimizer_rl, inputs, num_epochs, print_every=100):
     for epoch in range(num_epochs):
@@ -99,6 +95,10 @@ def train(pinn_model, rl_agent, optimizer_pinn, optimizer_rl, inputs, num_epochs
             print(f'Epoch {epoch}, PINN Loss: {pinn_loss.numpy()}, RL Loss: {value_loss.numpy()}')
 
 if __name__ == "__main__":
-    # Replace 'inputs' with actual input data
+    # Example usage
     inputs = np.random.rand(100, 60).astype(np.float32)  # Example input data
+    pinn_model = BipedalHumanoidPINN()
+    rl_agent = RLAgent(input_dim=60, action_dim=60)
+    optimizer_pinn = optimizers.Adam(learning_rate=0.001)
+    optimizer_rl = optimizers.Adam(learning_rate=0.001)
     train(pinn_model, rl_agent, optimizer_pinn, optimizer_rl, inputs, num_epochs=1000)
