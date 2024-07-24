@@ -1,5 +1,5 @@
 Component,Description,Quantity,Unit Cost (USD),Total Cost (USD)
-Microcontroller,ESP32-WROOM-32,1,5,5
+Microcontroller,ESP32-WROOM-32,2,5,10
 CPU,ATmega2560,1,10,10
 RAM,MT48LC16M16A2P-75,1,15,15
 FLASH Memory,W25Q64FVSSIG,1,2,2
@@ -11,6 +11,6 @@ Clock Generator,SI5351A-B-GT,1,2,2
 TPU,Google Edge TPU,1,25,25
 FPGA,Xilinx XC7A35T-1FTG256C,1,50,50
 Decoupling Capacitor,100nF Capacitor (0805 package),20,0.1,2
-,Total Components Cost,,,$123.5
+,Total Components Cost,,,$127
 ,Miscellaneous Costs,,,$50 - $100
-,Grand Total,,,$173.5 - $223.5
+,Grand Total,,,$177 - $227
