@@ -144,10 +144,6 @@ ___
   - Runs the `rospinn.py` script using `rosrun`.
   - Starts specified systemd services using `systemctl`.
   - Executes a specified MicroPython script for centralized control interfacing.
-- **Purpose**: Automates the compilation of the Verilog modules and execution of the ROS node.
-- **Functionality**:
-  - Compiles the Verilog modules using `iverilog` and `vvp`.
-  - Runs the `rospinn.py` script using `rosrun`.
 ___
 
 ## Schematics and Assembly
