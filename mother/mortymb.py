@@ -1,212 +1,186 @@
 import os
 import logging
-from skidl import Part, Net, ERC
-from lxml import etree
+from skidl import Part, Net, ERC, generate_netlist
+from skidl.libs.xess.lib import res, cap, ind, opamp
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Automatically set environment variables
-os.environ['KICAD6_3DMODEL_DIR'] = "/usr/share/kicad/3dmodels"
-os.environ['KICAD6_3RD_PARTY'] = "/home/loq1/.local/share/kicad/6.0/3rdparty"
-os.environ['KICAD6_FOOTPRINT_DIR'] = "/usr/share/kicad/footprints"
-os.environ['KICAD6_SYMBOL_DIR'] = "/usr/share/kicad/symbols"
-os.environ['KICAD6_TEMPLATE_DIR'] = "/usr/share/kicad/template"
-os.environ['KICAD_USER_TEMPLATE_DIR'] = "/home/loq1/.local/share/kicad/6.0/template"
+# Define components and add them to the schematic
+def add_components():
+    components = {
+        "ESP32": Part('MCU_Module', 'ESP32-WROOM-32', footprint='ESP32-WROOM-32'),
+        "CPU": Part('CPU', 'ATmega2560', footprint='TQFP-100'),
+        "RAM": Part('Memory_RAM', 'MT48LC16M16A2P-75', footprint='TSOP-II-54_8x22mm_P0.8mm'),
+        "FLASH": Part('Memory_FLASH', 'W25Q64FVSSIG', footprint='SOIC-8_3.9x4.9mm_P1.27mm'),
+        "UART": Part('Interface_UART', 'MAX232', footprint='SOIC-16_3.9x9.9mm_P1.27mm'),
+        "PMIC": Part('Power_Management', 'TPS65217', footprint='QFN-48_7x7mm_P0.5mm'),
+        "USB": Part('Interface_USB', 'USB3320C-EZK', footprint='QFN-24_4x4mm_P0.5mm'),
+        "ETH": Part('Interface_Ethernet', 'LAN8720', footprint='QFN-32_5x5mm_P0.5mm'),
+        "Clock": Part('Clock_Generator', 'SI5351A-B-GT', footprint='QFN-20_3x3mm_P0.5mm'),
+        "TPU": Part('Google_TPU', 'Edge_TPU', footprint='BGA-256_17x17mm_P1.0mm'),
+        "FPGA": Part('FPGA', 'XC7A35T-1FTG256C', footprint='BGA-256_17x17mm_P1.0mm')
+    }
+    logging.info("Components added to the schematic.")
+    return components
 
-# Function to find library path dynamically using environment variables
-def find_lib_path():
-    paths = [
-        os.getenv('KICAD6_3DMODEL_DIR'),
-        os.getenv('KICAD6_3RD_PARTY'),
-        os.getenv('KICAD6_FOOTPRINT_DIR'),
-        os.getenv('KICAD6_SYMBOL_DIR'),
-        os.getenv('KICAD6_TEMPLATE_DIR'),
-        os.getenv('KICAD_USER_TEMPLATE_DIR'),
-    ]
-    for path in paths:
-        if os.path.exists(path):
-            logging.info(f"Library path found: {path}")
-            return path
-    logging.warning("Library path not found")
-    return None
+# Define power supply nets and connect components
+def create_nets(components):
+    vcc = Net('VCC')
+    gnd = Net('GND')
 
-# Create a new KiCad schematic file
-def create_kicad_schematic():
-    try:
-        root = etree.Element("kicad_sch", version="20200310")
-        etree.SubElement(root, "host", tool="eeschema", version="(5.99.0-1467-g4b4952b09)")
-        etree.SubElement(root, "page").text = "A3"
+    power_pins = {
+        'ESP32': ['VCC', 'GND'],
+        'CPU': ['VCC', 'GND'],
+        'RAM': ['VCC', 'GND'],
+        'FLASH': ['VCC', 'GND'],
+        'UART': ['VCC', 'GND'],
+        'PMIC': ['VCC', 'GND'],
+        'USB': ['VCC', 'GND'],
+        'ETH': ['VCC', 'GND'],
+        'Clock': ['VCC', 'GND'],
+        'TPU': ['VCC', 'GND'],
+        'FPGA': ['VCC', 'GND']
+    }
 
-        title_block = etree.SubElement(root, "title_block")
-        etree.SubElement(title_block, "title").text = "Morty Project"
-        etree.SubElement(title_block, "company").text = "HermiTech"
-        etree.SubElement(title_block, "rev").text = "1"
+    for comp, pins in power_pins.items():
+        vcc += components[comp][pins[0]]
+        gnd += components[comp][pins[1]]
+    
+    logging.info("Power nets created and connected to components.")
+    return vcc, gnd
 
-        etree.SubElement(root, "lib_symbols")
-        etree.SubElement(root, "nets")
+# Add decoupling capacitors
+def add_decoupling_caps(components, gnd):
+    for comp in components:
+        vcc_pins = [pin.name for pin in components[comp].pins if 'VCC' in pin.name]
+        for pin in vcc_pins:
+            for i in range(2):  # Add two decoupling caps per VCC pin
+                capacitor = Part('Device', 'C', value='0.1uF', footprint='Capacitor_SMD:C_0805')
+                capacitor[1] += components[comp][pin]
+                capacitor[2] += gnd
+                logging.info(f"Decoupling capacitor added to component {comp}.")
 
-        logging.info("KiCad schematic structure created successfully")
-        return etree.ElementTree(root)
-    except Exception as e:
-        logging.error(f"Error creating KiCad schematic: {e}")
-        raise
+# Connect components
+def connect_components(components):
+    esp32 = components['ESP32']
+    cpu = components['CPU']
+    ram = components['RAM']
+    flash = components['FLASH']
+    uart = components['UART']
+    usb = components['USB']
+    eth = components['ETH']
+    clock = components['Clock']
+    tpu = components['TPU']
+    fpga = components['FPGA']
+    
+    # Example connections
+    # ESP32 to UART
+    esp32['GPIO1'] += uart['T1IN']
+    esp32['GPIO3'] += uart['R1OUT']
 
-# Save KiCad schematic file
-def save_kicad_schematic(tree, file_path):
-    try:
-        with open(file_path, 'wb') as file:
-            tree.write(file, pretty_print=True, xml_declaration=True, encoding="UTF-8")
-        logging.info(f"File saved successfully: {file_path}")
-    except Exception as e:
-        logging.error(f"Error saving KiCad schematic file: {e}")
-        raise
+    # ESP32 to USB
+    esp32['GPIO21'] += usb['DP']
+    esp32['GPIO22'] += usb['DM']
 
-# Add component using SKiDL
-def add_component(ref, value, footprint, x, y):
-    try:
-        component = Part('device', value, footprint=footprint, ref=ref)
-        component.place(x, y)
-        logging.info(f"Component {ref} added at ({x}, {y}).")
-        return component
-    except Exception as e:
-        logging.error(f"Error adding component {ref}: {e}")
-        raise
+    # ESP32 to Ethernet
+    esp32['GPIO0'] += eth['TXEN']
+    esp32['GPIO2'] += eth['TXD0']
+    esp32['GPIO15'] += eth['TXD1']
+    esp32['GPIO13'] += eth['RXER']
+    esp32['GPIO12'] += eth['RXD0']
+    esp32['GPIO14'] += eth['RXD1']
+    esp32['GPIO27'] += eth['CRS']
+    esp32['GPIO25'] += eth['MDC']
+    esp32['GPIO26'] += eth['MDIO']
 
-# Create a net and connect components using SKiDL
-def create_and_connect_net(net_name, connections):
-    try:
-        net = Net(net_name)
-        for conn in connections:
-            net += conn
-        logging.info(f"Net {net_name} created with connections: {connections}")
-        return net
-    except Exception as e:
-        logging.error(f"Error creating net {net_name}: {e}")
-        raise
+    # ESP32 to Clock
+    esp32['GPIO16'] += clock['CLK0']
+    esp32['GPIO17'] += clock['CLK1']
+    esp32['GPIO18'] += clock['CLK2']
 
-# Add decoupling capacitors using SKiDL
-def add_decoupling_caps(component, pin_name, gnd, num_caps=2):
-    try:
-        for i in range(num_caps):
-            cap_ref = f"C_{component.ref}_{pin_name}_{i}"
-            cap = Part('device', 'C', footprint="Capacitor_SMD", ref=cap_ref)
-            cap[1] += component[pin_name]
-            cap[2] += gnd
-            logging.info(f"Decoupling capacitor {cap_ref} added.")
-    except Exception as e:
-        logging.error(f"Error adding decoupling capacitors for {component.ref}: {e}")
-        raise
+    # ESP32 to TPU
+    esp32['GPIO19'] += tpu['I2C_SDA']
+    esp32['GPIO23'] += tpu['I2C_SCL']
 
-# Create a symbol file for the component
-def create_symbol_file(component_name, directory):
-    try:
-        symbol_file_path = os.path.join(directory, f"{component_name}.sym")
-        symbol_content = f"""v 20210605 1
-C {component_name}
-{{
-    T 0 0 5 10 1 1 0 0 1
-    T 0 0 5 10 1 1 0 0 1
-    L 0 0 100 100
-}}
-"""
-        with open(symbol_file_path, 'w') as f:
-            f.write(symbol_content)
-        logging.info(f"Symbol file created: {symbol_file_path}")
-    except Exception as e:
-        logging.error(f"Error creating symbol file for {component_name}: {e}")
-        raise
+    # ESP32 to FPGA
+    esp32['GPIO4'] += fpga['IO0']
+    esp32['GPIO5'] += fpga['IO1']
+    esp32['GPIO6'] += fpga['IO2']
+    esp32['GPIO7'] += fpga['IO3']
+    esp32['GPIO8'] += fpga['IO4']
+    esp32['GPIO9'] += fpga['IO5']
+    esp32['GPIO10'] += fpga['IO6']
+    esp32['GPIO11'] += fpga['IO7']
+    esp32['GPIO32'] += fpga['IO8']
+    esp32['GPIO33'] += fpga['IO9']
+    esp32['GPIO34'] += fpga['IO10']
+    esp32['GPIO35'] += fpga['IO11']
+    esp32['GPIO36'] += fpga['IO12']
+    esp32['GPIO39'] += fpga['IO13']
 
-# Create a netlist file
-def create_netlist_file(netlist, file_path):
-    try:
-        netlist_content = "\n".join(
-            f"{net.name} {' '.join(f'{c.ref}/{p}' for c, p in net.get_pins())}"
-            for net in netlist
-        )
-        with open(file_path, 'w') as f:
-            f.write(netlist_content)
-        logging.info(f"Netlist file created: {file_path}")
-    except Exception as e:
-        logging.error(f"Error creating netlist file: {e}")
-        raise
+    # CPU to RAM
+    cpu['AD0'] += ram['DQ0']
+    cpu['AD1'] += ram['DQ1']
+    cpu['AD2'] += ram['DQ2']
+    cpu['AD3'] += ram['DQ3']
+    cpu['AD4'] += ram['DQ4']
+    cpu['AD5'] += ram['DQ5']
+    cpu['AD6'] += ram['DQ6']
+    cpu['AD7'] += ram['DQ7']
+    cpu['AD8'] += ram['DQ8']
+    cpu['AD9'] += ram['DQ9']
+    cpu['AD10'] += ram['DQ10']
+    cpu['AD11'] += ram['DQ11']
+    cpu['AD12'] += ram['DQ12']
+    cpu['AD13'] += ram['DQ13']
+    cpu['AD14'] += ram['DQ14']
+    cpu['AD15'] += ram['DQ15']
+    cpu['A0'] += ram['A0']
+    cpu['A1'] += ram['A1']
+    cpu['A2'] += ram['A2']
+    cpu['A3'] += ram['A3']
+    cpu['A4'] += ram['A4']
+    cpu['A5'] += ram['A5']
+    cpu['A6'] += ram['A6']
+    cpu['A7'] += ram['A7']
+    cpu['A8'] += ram['A8']
+    cpu['A9'] += ram['A9']
+    cpu['A10'] += ram['A10']
+    cpu['A11'] += ram['A11']
+    cpu['A12'] += ram['A12']
+
+    logging.info("Components connected.")
+
+# Save netlist to file
+def save_netlist(file_path):
+    generate_netlist(file_=file_path)
+    logging.info(f"Netlist saved to {file_path}")
+
+# Save PCB design to file
+def save_pcb(file_path):
+    from skidl.pcb import pcb
+    pcb.save(file_path)
+    logging.info(f"PCB design saved to {file_path}")
 
 def main():
-    project_directory = "Morty_Project"
+    project_directory = "Morty_project"
     os.makedirs(project_directory, exist_ok=True)
-    schematic_file_path = os.path.join(project_directory, "morty.kicad_sch")
-    netlist_file_path = os.path.join(project_directory, "morty.net")
+    netlist_file_path = os.path.join(project_directory, "morty_project.net")
+    pcb_file_path = os.path.join(project_directory, "morty_project.kicad_pcb")
 
     try:
-        tree = create_kicad_schematic()
-
-        # Define components and add them to the schematic
-        components = [
-            ("U1", "CPU", "CPU_Footprint", 20, 50),
-            ("U2", "RAM1", "RAM_Footprint", 40, 60),
-            ("U3", "RAM2", "RAM_Footprint", 60, 60),
-            ("U4", "FPGA", "FPGA_Footprint", 50, 50),
-            ("U5", "UART_Comm", "UART_Footprint", 70, 40),
-            ("U6", "PCIe_Slot1", "PCIe_Footprint", 30, 80),
-            ("U7", "PCIe_Slot2", "PCIe_Footprint", 40, 80),
-            ("U8", "GPU1", "GPU_Footprint", 35, 90),
-            ("U9", "GPU2", "GPU_Footprint", 45, 90),
-            ("U10", "PMIC", "PMIC_Footprint", 10, 40),
-            ("U11", "ATX_Power", "Power_Footprint", 10, 30),
-            ("U12", "USB_Ctrl", "USB_Footprint", 70, 30),
-            ("U13", "USB_Port1", "USB_Port_Footprint", 80, 20),
-            ("U14", "USB_Port2", "USB_Port_Footprint", 90, 20),
-            ("U15", "ETH_Ctrl", "ETH_Footprint", 80, 50),
-            ("U16", "ETH_Port", "ETH_Port_Footprint", 90, 50),
-            ("U17", "SATA_Ctrl", "SATA_Footprint", 50, 20),
-            ("U18", "SATA_Port1", "SATA_Port_Footprint", 55, 10),
-            ("U19", "Clock_Gen", "Clock_Footprint", 45, 20),
-        ]
-
-        component_refs = {}
-        for ref, value, footprint, x, y in components:
-            component = add_component(ref, value, footprint, x, y)
-            component_refs[ref] = component
-            create_symbol_file(ref, project_directory)
-
-        # Define power supply nets and connect components
-        power_nets = {
-            'VCC': [
-                component_refs['U1'][1], component_refs['U2'][1], component_refs['U3'][1], component_refs['U4'][1],
-                component_refs['U10'][1], component_refs['U12'][1], component_refs['U15'][1], component_refs['U17'][1],
-                component_refs['U19'][1]
-            ],
-            'GND': [
-                component_refs['U1'][2], component_refs['U2'][2], component_refs['U3'][2], component_refs['U4'][2],
-                component_refs['U10'][2], component_refs['U12'][2], component_refs['U15'][2], component_refs['U17'][2],
-                component_refs['U19'][2]
-            ]
-        }
-
-        for net_name, connections in power_nets.items():
-            create_and_connect_net(net_name, connections)
-
-        # Connect decoupling capacitors
-        decoupling_components = [
-            'U1', 'U2', 'U3', 'U12', 'U15', 'U17', 'U19', 'U4'
-        ]
-        for component_ref in decoupling_components:
-            component = component_refs[component_ref]
-            add_decoupling_caps(component, 'VCC', component_refs['U10'][2])
-
-        # Save the KiCad project file
-        save_kicad_schematic(tree, schematic_file_path)
-
-        # Create netlist
-        netlist = [
-            Net('VCC'), Net('GND')
-        ]
-
-        create_netlist_file(netlist, netlist_file_path)
+        components = add_components()
+        vcc, gnd = create_nets(components)
+        add_decoupling_caps(components, gnd)
+        connect_components(components)
+        save_netlist(netlist_file_path)
+        save_pcb(pcb_file_path)
 
         # Perform ERC
         ERC()
-
+        logging.info("ERC completed successfully.")
+        
     except Exception as e:
         logging.error(f"Error in main execution: {e}")
 
