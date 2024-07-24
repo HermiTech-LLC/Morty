@@ -144,16 +144,20 @@ ___
   - Compiles the Verilog modules using `iverilog` and `vvp`.
   - Runs the `rospinn.py` script using `rosrun`.
 ___
-## Schematics and assembly
+
+## Schematics and Assembly
 
 ### `mortymb.py`
 
-- **Purpose**: Defines and connects the electronic components of the robot’s motherboard using `lxml` to manipulate gEDA files.
+- **Purpose**: Defines and connects the electronic components of the robot’s motherboard using `skidl` for electronic design automation.
 - **Functionality**:
-  - Defines power supply nets and various components (CPU, RAM, FPGA, PCIe slots, GPUs, USB, Ethernet, and SATA controllers).
+  - Defines power supply nets and various components (ESP32, CPU, RAM, FPGA, USB, Ethernet, UART, PMIC, Clock, TPU, and Flash memory).
   - Establishes connections between components.
   - Adds decoupling capacitors for power stability.
   - Generates netlist, schematic, and PCB layout files.
+  - Includes error checking and reporting using ERC (Electrical Rule Check).
+
+The `mortymb.py` script automates the process of creating a schematic for the motherboard by defining components, connecting them, and ensuring the design follows electrical rules. The script outputs the necessary files for further processing and PCB design.
 
 ## Appendix
 
