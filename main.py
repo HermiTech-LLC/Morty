@@ -2,7 +2,7 @@ import os
 import subprocess
 import numpy as np
 from tpu import BipedalHumanoidPINN, physics_informed_loss, RLAgent, train
-from mother.Software\Firmware.rosnode import initialize_ros_node, subscribe_to_ros_topics, communicate_with_fpga
+from mother.Software_Firmware.rosnode import initialize_ros_node, subscribe_to_ros_topics, communicate_with_fpga
 
 def compile_verilog():
     """
