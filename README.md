@@ -53,7 +53,7 @@ This project implements a bipedal humanoid control system using a Physics-Inform
 - PyTorch
 - scikit-learn
 - iverilog (for Verilog compilation)
-- gEDA (for electronic design)
+- sKiDL (for electronic design)
 
 ## Setup
 
