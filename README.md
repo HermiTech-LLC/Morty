@@ -166,13 +166,17 @@ The `mortymb.py` script automates the process of creating a schematic for the mo
 ### Power and Ground Connections
 
 - **GND**: Ground.
-- **PCIE_VCC**: Power supply for PCIe slots and GPUs.
-- **PCIE_GND**: Ground for PCIe slots and GPUs.
+- **ESP32_VCC**: Power supply for the ESP32 module.
+- **CPU_VCC**: Power supply for the CPU.
+- **RAM_VCC**: Power supply for the RAM.
+- **FPGA_VCC**: Power supply for the FPGA.
+- **FPGA_GND**: Ground for FPGA.
 - **USB_VCC**: Power supply for USB ports.
 - **ETH_VCC**: Power supply for Ethernet controller and port.
-- **SATA_VCC**: Power supply for SATA controller and ports.
-- **FPGA_VCC**: Power supply for FPGA.
-- **FPGA_GND**: Ground for FPGA.
+- **UART_VCC**: Power supply for UART communication module.
+- **PMIC_VCC**: Power supply from the Power Management IC.
+- **TPU_VCC**: Power supply for TPU.
+- **FLASH_VCC**: Power supply for Flash memory.
 
 ### Helper Function
 
@@ -184,22 +188,19 @@ The `mortymb.py` script automates the process of creating a schematic for the mo
 
 The script defines the following components:
 
-- **CPU**: AMD Ryzen9 7950X.
-- **RAM**: Two DDR4 memory modules.
-- **FPGA**: Xilinx Spartan6.
-- **UART Communication**: Custom UART communication module.
-- **PCIe Slots**: Six PCIe slots.
-- **GPUs**: Six AMD Radeon RX GPUs.
-- **PMIC**: Power Management IC (TI TPS65217).
-- **ATX Power**: ATX power connector.
-- **USB Controller**: NEC D720200.
-- **USB Ports**: Four USB ports.
-- **Ethernet Controller**: Realtek RTL8111.
+- **ESP32**: ESP32-WROOM-32 module.
+- **CPU**: ATmega2560.
+- **RAM**: MT48LC16M16A2P-75 (SDRAM).
+- **FPGA**: Xilinx XC7A35T-1FTG256C.
+- **UART Communication**: MAX232.
+- **PMIC**: TPS65217.
+- **USB Controller**: USB3320C-EZK.
+- **USB Ports**: Multiple USB ports.
+- **Ethernet Controller**: LAN8720.
 - **Ethernet Port**: RJ45 Ethernet port.
-- **SATA Controller**: Marvell 88SE9215.
-- **SATA Ports**: Four SATA ports.
-- **Clock Generator**: IDT 5V9885.
-- **VRMs**: Voltage Regulator Modules for different power nets.
+- **Clock Generator**: SI5351A-B-GT.
+- **TPU**: Edge TPU.
+- **Flash Memory**: W25Q64FVSSIG.
 
 ### Connections
 
@@ -207,31 +208,35 @@ The `mortymb.py` script establishes connections for power and data lines between
 
 - **Power and Ground Connections**:
   - Connects each component’s power and ground pins to the respective power nets.
-  - Example: `power_nets['VCC'] += cpu['VCC']`.
+  - Example: `vcc += cpu['VCC']`.
 
 - **CPU and RAM**:
   - Connects address and data lines between the CPU and RAM modules.
-  - Example: `cpu['ADDR0', 'ADDR1', ...] += ram[0]['ADDR0', 'ADDR1', ...]`.
+  - Example: `cpu['AD0', 'AD1', ...] += ram['DQ0', 'DQ1', ...]`.
 
 - **FPGA**:
   - Connects FPGA power and ground pins.
-  - Example: `power_nets['FPGA_VCC'] += fpga['VCC']`.
+  - Example: `vcc += fpga['VCC']`.
 
 - **UART Communication**:
-  - Connects UART communication lines between the CPU, UART module, and FPGA.
-  - Example: `cpu['UART_TX'] += uart_comm['uart_rx']`.
+  - Connects UART communication lines between the ESP32, CPU, and UART module.
+  - Example: `esp32['GPIO1'] += uart['T1IN']`.
 
-- **PCIe Slots and GPUs**:
-  - Connects power, ground, and data lines between PCIe slots, GPUs, and CPU.
-  - Example: `power_nets['PCIE_VCC'] += pcie_slots[0]['VCC'], gpus[0]['PCIE_VCC']`.
+- **ESP32 to USB**:
+  - Connects data lines between ESP32 and USB controller.
+  - Example: `esp32['GPIO21'] += usb['DP']`.
+
+- **ESP32 to Ethernet**:
+  - Connects data lines between ESP32 and Ethernet controller.
+  - Example: `esp32['GPIO0'] += eth['TXEN']`.
 
 - **PMIC**:
-  - Connects the PMIC to provide regulated power to the CPU and RAM.
+  - Connects the PMIC to provide regulated power to various components.
   - Example: `pmic['OUT1'] += cpu['VCC']`.
 
-### GPIO Integration Plans
+### GPIO Capabilities
 
-For future expansion, the project plans to integrate GPIO (General Purpose Input/Output) for enhanced sensor interfacing and integral control capabilities.
+The current design includes GPIO (General Purpose Input/Output) integration for enhanced sensor interfacing and integral control capabilities, making the system versatile for future expansions and customizations.
 
 ## Conclusion
 
