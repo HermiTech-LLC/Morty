@@ -138,7 +138,12 @@ ___
   - Implements FPGA operations and interfaces with the CPU and UART modules.
 
 ### `main.py`
-
+- **Purpose**: Automates the compilation of Verilog modules, execution of the ROS node, starts systemd services, and runs MicroPython scripts for centralized control interfacing.
+- **Functionality**:
+  - Compiles the Verilog modules using `iverilog` and `vvp`.
+  - Runs the `rospinn.py` script using `rosrun`.
+  - Starts specified systemd services using `systemctl`.
+  - Executes a specified MicroPython script for centralized control interfacing.
 - **Purpose**: Automates the compilation of the Verilog modules and execution of the ROS node.
 - **Functionality**:
   - Compiles the Verilog modules using `iverilog` and `vvp`.
