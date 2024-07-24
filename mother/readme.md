@@ -11,7 +11,7 @@ ___
 
 *conceptual representation*
 
-![mortDiagram](https://github.com/HermiTech-LLC/Morty/blob/main/Images/MortDiagram.PNG)
+![mortDiagram](https://github.com/HermiTech-LLC/Morty/blob/main/Images/Mortboard.PNG)
 
 ___
 
