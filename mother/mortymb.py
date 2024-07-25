@@ -1,9 +1,61 @@
 import os
+import subprocess
 import logging
 from skidl import Part, Net, ERC, generate_netlist
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Git repositories for KiCad libraries
+LIBRARIES = {
+    "ESP32-WROOM-32": "https://github.com/espressif/kicad-libraries.git",
+    "ATMEGA": "https://github.com/KiCad/kicad-symbols.git",
+    "MICRON": "https://github.com/KiCad/kicad-footprints.git",
+    "WINBOND": "https://github.com/KiCad/kicad-footprints.git",
+    "MAXIM": "https://github.com/KiCad/kicad-symbols.git",
+    "TI": "https://github.com/KiCad/kicad-footprints.git",
+    "MICROCHIP": "https://github.com/KiCad/kicad-symbols.git",
+    "LAN8720": "https://github.com/KiCad/kicad-footprints.git",
+    "SI5351A": "https://github.com/KiCad/kicad-symbols.git",
+    "GOOGLE_EDGE_TPU": "https://github.com/KiCad/kicad-footprints.git",
+    "XILINX": "https://github.com/KiCad/kicad-footprints.git",
+    "GENERIC": "https://github.com/KiCad/kicad-footprints.git",
+    "TDK": "https://github.com/KiCad/kicad-symbols.git",
+    "ANALOG_DEVICES": "https://github.com/KiCad/kicad-symbols.git"
+}
+
+# Directory to store downloaded libraries
+LIB_DIR = os.path.expanduser("~/kicad_libraries")
+
+def run_command(command):
+    try:
+        subprocess.run(command, check=True, shell=True)
+        logging.info(f"Successfully executed: {command}")
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Failed to execute: {command}")
+        raise e
+
+def clone_or_update_repo(repo_url, dest_dir):
+    if os.path.exists(dest_dir):
+        logging.info(f"Updating existing repository at {dest_dir}")
+        run_command(f"cd {dest_dir} && git pull")
+    else:
+        logging.info(f"Cloning repository from {repo_url} to {dest_dir}")
+        run_command(f"git clone {repo_url} {dest_dir}")
+
+def ensure_libraries_installed():
+    if not os.path.exists(LIB_DIR):
+        os.makedirs(LIB_DIR)
+
+    for lib_name, repo_url in LIBRARIES.items():
+        dest_dir = os.path.join(LIB_DIR, lib_name)
+        clone_or_update_repo(repo_url, dest_dir)
+
+    # Make sure KiCad can find the libraries
+    kicad_path = os.path.expanduser("~/.config/kicad/sym-lib-table")
+    with open(kicad_path, 'a') as file:
+        for lib_name in LIBRARIES.keys():
+            file.write(f"(lib (name {lib_name})(type KiCad)(uri {os.path.join(LIB_DIR, lib_name)})(options \"\")(descr \"\"))\n")
 
 # Define components and add them to the schematic
 def add_components():
@@ -28,7 +80,6 @@ def add_components():
     }
     logging.info("Components added to the schematic.")
     return components
-
 # Define power supply nets and connect components
 def create_nets(components):
     vcc = Net('VCC')
@@ -71,6 +122,7 @@ def add_decoupling_caps(components, gnd):
                 capacitor[1] += components[comp][pin]
                 capacitor[2] += gnd
                 logging.info(f"Decoupling capacitor added to component {comp}.")
+
 # Connect components
 def connect_components(components):
     esp32_1 = components['ESP32_1']
@@ -177,7 +229,6 @@ def connect_components(components):
     esp32_2['GPIO35'] += fpga['IO11']
     esp32_2['GPIO36'] += fpga['IO12']
     esp32_2['GPIO39'] += fpga['IO13']
-
     # CPU to RAM
     cpu['AD0'] += ram['DQ0']
     cpu['AD1'] += ram['DQ1']
@@ -279,6 +330,7 @@ def main():
     pcb_file_path = os.path.join(project_directory, "morty_project.kicad_pcb")
 
     try:
+        ensure_libraries_installed()
         components = add_components()
         vcc, gnd = create_nets(components)
         add_decoupling_caps(components, gnd)
@@ -295,3 +347,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
