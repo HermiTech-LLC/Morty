@@ -2,27 +2,27 @@ import os
 import pcbflow as pcb
 
 # Define the board dimensions
-board = pcb.Board("MortyProject", 100, 80)  # Board size: 100mm x 80mm
+board = pcb.Board((100, 80), name="MortyProject")  # Board size: 100mm x 80mm
 
 # Add components to the board
 components = {
-    "ESP32_1": pcb.Component("ESP32-WROOM-32", "ESP32-WROOM-32", x=20, y=20, rotation=0),
-    "ESP32_2": pcb.Component("ESP32-WROOM-32", "ESP32-WROOM-32", x=60, y=20, rotation=0),
-    "CPU": pcb.Component("ATmega2560", "TQFP-100", x=40, y=40, rotation=0),
-    "RAM": pcb.Component("MT48LC16M16A2P-75", "TSOP-II-54", x=40, y=60, rotation=0),
-    "FLASH": pcb.Component("W25Q64FVSSIG", "SOIC-8", x=70, y=60, rotation=0),
-    "UART": pcb.Component("MAX232", "SOIC-16", x=10, y=60, rotation=0),
-    "PMIC": pcb.Component("TPS65217", "QFN-48", x=10, y=40, rotation=0),
-    "USB": pcb.Component("USB3320C-EZK", "QFN-24", x=80, y=20, rotation=0),
-    "ETH": pcb.Component("LAN8720", "QFN-32", x=80, y=40, rotation=0),
-    "Clock": pcb.Component("SI5351A-B-GT", "QFN-20", x=80, y=60, rotation=0),
-    "TPU": pcb.Component("Edge_TPU", "BGA-256", x=20, y=60, rotation=0),
-    "FPGA": pcb.Component("XC7A35T-1FTG256C", "BGA-256", x=60, y=60, rotation=0),
-    "SDCard": pcb.Component("SD_Card_Socket", "SD_Card", x=20, y=80, rotation=0),
-    "IMU": pcb.Component("MPU6050", "QFN-24", x=60, y=80, rotation=0),
-    "Accelerometer": pcb.Component("ADXL345", "LGA-14", x=40, y=20, rotation=0),
-    "Gyro_PID": pcb.Component("PID_Gyroscope", "DIP-16", x=10, y=80, rotation=0),
-    "Serial_Bus_Driver": pcb.Component("MCP23017", "SSOP-28", x=70, y=80, rotation=0),
+    "ESP32_1": pcb.Component("ESP32-WROOM-32", (20, 20), footprint="ESP32-WROOM-32"),
+    "ESP32_2": pcb.Component("ESP32-WROOM-32", (60, 20), footprint="ESP32-WROOM-32"),
+    "CPU": pcb.Component("ATmega2560", (40, 40), footprint="TQFP-100"),
+    "RAM": pcb.Component("MT48LC16M16A2P-75", (40, 60), footprint="TSOP-II-54"),
+    "FLASH": pcb.Component("W25Q64FVSSIG", (70, 60), footprint="SOIC-8"),
+    "UART": pcb.Component("MAX232", (10, 60), footprint="SOIC-16"),
+    "PMIC": pcb.Component("TPS65217", (10, 40), footprint="QFN-48"),
+    "USB": pcb.Component("USB3320C-EZK", (80, 20), footprint="QFN-24"),
+    "ETH": pcb.Component("LAN8720", (80, 40), footprint="QFN-32"),
+    "Clock": pcb.Component("SI5351A-B-GT", (80, 60), footprint="QFN-20"),
+    "TPU": pcb.Component("Edge_TPU", (20, 60), footprint="BGA-256"),
+    "FPGA": pcb.Component("XC7A35T-1FTG256C", (60, 60), footprint="BGA-256"),
+    "SDCard": pcb.Component("SD_Card_Socket", (20, 80), footprint="SD_Card"),
+    "IMU": pcb.Component("MPU6050", (60, 80), footprint="QFN-24"),
+    "Accelerometer": pcb.Component("ADXL345", (40, 20), footprint="LGA-14"),
+    "Gyro_PID": pcb.Component("PID_Gyroscope", (10, 80), footprint="DIP-16"),
+    "Serial_Bus_Driver": pcb.Component("MCP23017", (70, 80), footprint="SSOP-28"),
 }
 
 # Add components to the board
@@ -73,8 +73,7 @@ try:
     components["Clock"].connect("CLK0", components["ESP32_2"].get_pin("GPIO16"))
     components["Clock"].connect("CLK1", components["ESP32_2"].get_pin("GPIO17"))
     components["Clock"].connect("CLK2", components["ESP32_2"].get_pin("GPIO18"))
-
-    # TPU connections
+        # TPU connections
     components["TPU"].connect("I2C_SDA", components["ESP32_1"].get_pin("GPIO19"))
     components["TPU"].connect("I2C_SCL", components["ESP32_1"].get_pin("GPIO23"))
     components["TPU"].connect("I2C_SDA", components["ESP32_2"].get_pin("GPIO19"))
@@ -86,6 +85,7 @@ try:
     for fpga_pin, esp_pin in zip(fpga_pins, esp_fpga_pins):
         components["FPGA"].connect(fpga_pin, components["ESP32_1"].get_pin(esp_pin))
         components["FPGA"].connect(fpga_pin, components["ESP32_2"].get_pin(esp_pin))
+
     # SDCard connections
     components["SDCard"].connect("CS", components["ESP32_1"].get_pin("GPIO5"))
     components["SDCard"].connect("CLK", components["ESP32_1"].get_pin("GPIO18"))
@@ -140,7 +140,7 @@ except KeyError as e:
 def add_decoupling_caps(component):
     vcc_pins = [pin for pin in component.pins if 'VCC' in pin.name]
     for pin in vcc_pins:
-        cap = pcb.Component("C", "0805", value="0.1uF")
+        cap = pcb.Component("C", (0, 0), footprint="0805", value="0.1uF")
         board.add(cap)
         vcc.connect(cap.get_pin(1))
         gnd.connect(cap.get_pin(2))
