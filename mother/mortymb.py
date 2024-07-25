@@ -55,8 +55,7 @@ def ensure_libraries_installed():
     kicad_path = os.path.expanduser("~/.config/kicad/sym-lib-table")
     with open(kicad_path, 'a') as file:
         for lib_name in LIBRARIES.keys():
-            file.write(f"(lib (name {lib_name})(type KiCad)(uri {os.path.join(LIB_DIR, lib_name)})(options \"\")(descr \"\"))\n")
-
+            file.write(f"(lib (name {lib_name})(type KiCad)(uri \"{os.path.join(LIB_DIR, lib_name)}\")(options \"\")(descr \"\"))\n")
 # Define components and add them to the schematic
 def add_components():
     components = {
@@ -80,6 +79,7 @@ def add_components():
     }
     logging.info("Components added to the schematic.")
     return components
+
 # Define power supply nets and connect components
 def create_nets(components):
     vcc = Net('VCC')
@@ -122,7 +122,6 @@ def add_decoupling_caps(components, gnd):
                 capacitor[1] += components[comp][pin]
                 capacitor[2] += gnd
                 logging.info(f"Decoupling capacitor added to component {comp}.")
-
 # Connect components
 def connect_components(components):
     esp32_1 = components['ESP32_1']
@@ -214,6 +213,7 @@ def connect_components(components):
     esp32_1['GPIO35'] += fpga['IO11']
     esp32_1['GPIO36'] += fpga['IO12']
     esp32_1['GPIO39'] += fpga['IO13']
+
     # ESP32_2 to FPGA
     esp32_2['GPIO4'] += fpga['IO0']
     esp32_2['GPIO5'] += fpga['IO1']
@@ -347,4 +347,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
