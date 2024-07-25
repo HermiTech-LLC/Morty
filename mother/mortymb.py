@@ -1,7 +1,6 @@
 import os
 import logging
 from skidl import Part, Net, ERC, generate_netlist
-from skidl.libs.xess.lib import res, cap, ind, opamp
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -9,23 +8,23 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # Define components and add them to the schematic
 def add_components():
     components = {
-        "ESP32_1": Part('MCU_Module', 'ESP32-WROOM-32', footprint='ESP32-WROOM-32'),
-        "ESP32_2": Part('MCU_Module', 'ESP32-WROOM-32', footprint='ESP32-WROOM-32'),
-        "CPU": Part('MCU_Microchip_ATmega', 'ATmega2560', footprint='TQFP-100'),
-        "RAM": Part('Memory_RAM', 'MT48LC16M16A2P-75', footprint='TSOP-II-54_8x22mm_P0.8mm'),
-        "FLASH": Part('Memory_FLASH', 'W25Q64FVSSIG', footprint='SOIC-8_3.9x4.9mm_P1.27mm'),
-        "UART": Part('Interface_UART', 'MAX232', footprint='SOIC-16_3.9x9.9mm_P1.27mm'),
-        "PMIC": Part('Power_Management', 'TPS65217', footprint='QFN-48_7x7mm_P0.5mm'),
-        "USB": Part('Interface_USB', 'USB3320C-EZK', footprint='QFN-24_4x4mm_P0.5mm'),
-        "ETH": Part('Interface_Ethernet', 'LAN8720', footprint='QFN-32_5x5mm_P0.5mm'),
-        "Clock": Part('Clock_Generator', 'SI5351A-B-GT', footprint='QFN-20_3x3mm_P0.5mm'),
-        "TPU": Part('Google_TPU', 'Edge_TPU', footprint='BGA-256_17x17mm_P1.0mm'),
-        "FPGA": Part('FPGA_Xilinx', 'XC7A35T-1FTG256C', footprint='BGA-256_17x17mm_P1.0mm'),
-        "SDCard": Part('Memory_Card', 'SD_Card_Socket', footprint='SD_Memory_Card_Mini_Micro_SD'),
-        "IMU": Part('Sensor_IMU', 'MPU6050', footprint='QFN-24_4x4mm_P0.5mm'),
-        "Accelerometer": Part('Sensor_Accelerometer', 'ADXL345', footprint='LGA-14_3x5mm_P0.8mm'),
-        "Gyro_PID": Part('Control_Module', 'PID_Gyroscope', footprint='DIP-16_3.9x19.3mm_P2.54mm'),
-        "Serial_Bus_Driver": Part('Interface_Serial', 'MCP23017', footprint='SSOP-28_3.9x9.9mm_P0.635mm')
+        "ESP32_1": Part('ESPRESSIF', 'ESP32-WROOM-32', footprint='ESPRESSIF:ESP32-WROOM-32'),
+        "ESP32_2": Part('ESPRESSIF', 'ESP32-WROOM-32', footprint='ESPRESSIF:ESP32-WROOM-32'),
+        "CPU": Part('Microchip', 'ATMEGA2560', footprint='Package_QFP:TQFP-100_14x14mm_P0.5mm'),
+        "RAM": Part('Micron', 'MT48LC16M16A2P-75', footprint='Package_TSOP:TSOP-II-54_8x22mm_P0.8mm'),
+        "FLASH": Part('Winbond', 'W25Q64FVSSIG', footprint='Package_SO:SOIC-8_3.9x4.9mm_P1.27mm'),
+        "UART": Part('Maxim', 'MAX232', footprint='Package_SO:SOIC-16_3.9x9.9mm_P1.27mm'),
+        "PMIC": Part('TI', 'TPS65217', footprint='Package_QFN:QFN-48_7x7mm_P0.5mm'),
+        "USB": Part('Microchip', 'USB3320C-EZK', footprint='Package_QFN:QFN-24_4x4mm_P0.5mm'),
+        "ETH": Part('Microchip', 'LAN8720', footprint='Package_QFN:QFN-32_5x5mm_P0.5mm'),
+        "Clock": Part('SiliconLabs', 'SI5351A-B-GT', footprint='Package_QFN:QFN-20_3x3mm_P0.5mm'),
+        "TPU": Part('Google', 'Edge_TPU', footprint='Package_BGA:BGA-256_17x17mm_P1.0mm'),
+        "FPGA": Part('Xilinx', 'XC7A35T-1FTG256C', footprint='Package_BGA:BGA-256_17x17mm_P1.0mm'),
+        "SDCard": Part('Generic', 'SD_Card_Socket', footprint='Connector:SD_Memory_Card_Mini_Micro_SD'),
+        "IMU": Part('TDK', 'MPU6050', footprint='Package_QFN:QFN-24_4x4mm_P0.5mm'),
+        "Accelerometer": Part('AnalogDevices', 'ADXL345', footprint='Package_LGA:LGA-14_3x5mm_P0.8mm'),
+        "Gyro_PID": Part('Generic', 'PID_Gyroscope', footprint='Package_DIP:DIP-16_W7.62mm'),
+        "Serial_Bus_Driver": Part('Microchip', 'MCP23017', footprint='Package_SSOP:SSOP-28_5.3x10.2mm_P0.65mm')
     }
     logging.info("Components added to the schematic.")
     return components
@@ -72,7 +71,6 @@ def add_decoupling_caps(components, gnd):
                 capacitor[1] += components[comp][pin]
                 capacitor[2] += gnd
                 logging.info(f"Decoupling capacitor added to component {comp}.")
-
 # Connect components
 def connect_components(components):
     esp32_1 = components['ESP32_1']
@@ -91,7 +89,7 @@ def connect_components(components):
     accelerometer = components['Accelerometer']
     gyro_pid = components['Gyro_PID']
     serial_bus_driver = components['Serial_Bus_Driver']
-    
+
     # Example connections
     # ESP32_1 to UART
     esp32_1['GPIO1'] += uart['T1IN']
@@ -164,7 +162,6 @@ def connect_components(components):
     esp32_1['GPIO35'] += fpga['IO11']
     esp32_1['GPIO36'] += fpga['IO12']
     esp32_1['GPIO39'] += fpga['IO13']
-
     # ESP32_2 to FPGA
     esp32_2['GPIO4'] += fpga['IO0']
     esp32_2['GPIO5'] += fpga['IO1']
