@@ -11,7 +11,7 @@ def add_components():
     components = {
         "ESP32_1": Part('MCU_Module', 'ESP32-WROOM-32', footprint='ESP32-WROOM-32'),
         "ESP32_2": Part('MCU_Module', 'ESP32-WROOM-32', footprint='ESP32-WROOM-32'),
-        "CPU": Part('CPU', 'ATmega2560', footprint='TQFP-100'),
+        "CPU": Part('MCU_Microchip_ATmega', 'ATmega2560', footprint='TQFP-100'),
         "RAM": Part('Memory_RAM', 'MT48LC16M16A2P-75', footprint='TSOP-II-54_8x22mm_P0.8mm'),
         "FLASH": Part('Memory_FLASH', 'W25Q64FVSSIG', footprint='SOIC-8_3.9x4.9mm_P1.27mm'),
         "UART": Part('Interface_UART', 'MAX232', footprint='SOIC-16_3.9x9.9mm_P1.27mm'),
@@ -20,7 +20,7 @@ def add_components():
         "ETH": Part('Interface_Ethernet', 'LAN8720', footprint='QFN-32_5x5mm_P0.5mm'),
         "Clock": Part('Clock_Generator', 'SI5351A-B-GT', footprint='QFN-20_3x3mm_P0.5mm'),
         "TPU": Part('Google_TPU', 'Edge_TPU', footprint='BGA-256_17x17mm_P1.0mm'),
-        "FPGA": Part('FPGA', 'XC7A35T-1FTG256C', footprint='BGA-256_17x17mm_P1.0mm'),
+        "FPGA": Part('FPGA_Xilinx', 'XC7A35T-1FTG256C', footprint='BGA-256_17x17mm_P1.0mm'),
         "SDCard": Part('Memory_Card', 'SD_Card_Socket', footprint='SD_Memory_Card_Mini_Micro_SD'),
         "IMU": Part('Sensor_IMU', 'MPU6050', footprint='QFN-24_4x4mm_P0.5mm'),
         "Accelerometer": Part('Sensor_Accelerometer', 'ADXL345', footprint='LGA-14_3x5mm_P0.8mm'),
@@ -72,6 +72,7 @@ def add_decoupling_caps(components, gnd):
                 capacitor[1] += components[comp][pin]
                 capacitor[2] += gnd
                 logging.info(f"Decoupling capacitor added to component {comp}.")
+
 # Connect components
 def connect_components(components):
     esp32_1 = components['ESP32_1']
