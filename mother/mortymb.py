@@ -73,7 +73,7 @@ try:
     components["Clock"].connect("CLK0", components["ESP32_2"].get_pin("GPIO16"))
     components["Clock"].connect("CLK1", components["ESP32_2"].get_pin("GPIO17"))
     components["Clock"].connect("CLK2", components["ESP32_2"].get_pin("GPIO18"))
-        # TPU connections
+    # TPU connections
     components["TPU"].connect("I2C_SDA", components["ESP32_1"].get_pin("GPIO19"))
     components["TPU"].connect("I2C_SCL", components["ESP32_1"].get_pin("GPIO23"))
     components["TPU"].connect("I2C_SDA", components["ESP32_2"].get_pin("GPIO19"))
