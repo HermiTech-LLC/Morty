@@ -1,53 +1,39 @@
 import os
 import logging
-from pyspice.logging.logging import setup_logging
-from pyspice.probe import raw_probe
-from pyspice.spice.netlist import Circuit, SubCircuitFactory
-from pyspice.unit import *
-from pyspice.spice.library import SpiceLibrary
-from pyspice.simulation import Simulation, TransientAnalysis
+from skidl import Part, Net, ERC, generate_netlist
+from skidl.libs.xess.lib import res, cap, ind, opamp
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-setup_logging()
 
-# Define the ESP32 SubCircuit
-class ESP32(SubCircuitFactory):
-    __name__ = 'ESP32'
-    __nodes__ = ('VCC', 'GND', 'GPIO1', 'GPIO3', 'GPIO21', 'GPIO22', 'GPIO0', 'GPIO2', 'GPIO15', 'GPIO13', 'GPIO12', 'GPIO14', 'GPIO27', 'GPIO25', 'GPIO26', 'GPIO16', 'GPIO17', 'GPIO18', 'GPIO19', 'GPIO23', 'GPIO4', 'GPIO5', 'GPIO6', 'GPIO7', 'GPIO8', 'GPIO9', 'GPIO10', 'GPIO11', 'GPIO32', 'GPIO33', 'GPIO34', 'GPIO35', 'GPIO36', 'GPIO39', 'GPIO20')
-
-    def __init__(self):
-        super().__init__()
-        self.VCC = self.VCC()
-        self.GND = self.GND()
-
-# Define the circuit
-def add_components(circuit):
+# Define components and add them to the schematic
+def add_components():
     components = {
-        "ESP32_1": circuit.subcircuit(ESP32()),
-        "ESP32_2": circuit.subcircuit(ESP32()),
-        "CPU": circuit.X('CPU', 'ATMEGA2560', 'VCC', 'GND'),
-        "RAM": circuit.X('RAM', 'MT48LC16M16A2P-75', 'VCC', 'GND'),
-        "FLASH": circuit.X('FLASH', 'W25Q64FVSSIG', 'VCC', 'GND'),
-        "UART": circuit.X('UART', 'MAX232', 'VCC', 'GND'),
-        "PMIC": circuit.X('PMIC', 'TPS65217', 'VCC', 'GND'),
-        "USB": circuit.X('USB', 'USB3320C-EZK', 'VCC', 'GND'),
-        "ETH": circuit.X('ETH', 'LAN8720', 'VCC', 'GND'),
-        "Clock": circuit.X('Clock', 'SI5351A-B-GT', 'VCC', 'GND'),
-        "TPU": circuit.X('TPU', 'Edge_TPU', 'VCC', 'GND'),
-        "FPGA": circuit.X('FPGA', 'XC7A35T-1FTG256C', 'VCC', 'GND'),
-        "SDCard": circuit.X('SDCard', 'SD_Memory_Card_Mini_Micro_SD', 'VCC', 'GND'),
-        "IMU": circuit.X('IMU', 'MPU6050', 'VCC', 'GND'),
-        "Accelerometer": circuit.X('Accelerometer', 'ADXL345', 'VCC', 'GND'),
-        "Gyro_PID": circuit.X('Gyro_PID', 'PID_Gyroscope', 'VCC', 'GND'),
-        "Serial_Bus_Driver": circuit.X('Serial_Bus_Driver', 'MCP23017', 'VCC', 'GND')
+        "ESP32_1": Part('MCU_Module', 'ESP32-WROOM-32', footprint='ESP32-WROOM-32'),
+        "ESP32_2": Part('MCU_Module', 'ESP32-WROOM-32', footprint='ESP32-WROOM-32'),
+        "CPU": Part('CPU', 'ATmega2560', footprint='TQFP-100'),
+        "RAM": Part('Memory_RAM', 'MT48LC16M16A2P-75', footprint='TSOP-II-54_8x22mm_P0.8mm'),
+        "FLASH": Part('Memory_FLASH', 'W25Q64FVSSIG', footprint='SOIC-8_3.9x4.9mm_P1.27mm'),
+        "UART": Part('Interface_UART', 'MAX232', footprint='SOIC-16_3.9x9.9mm_P1.27mm'),
+        "PMIC": Part('Power_Management', 'TPS65217', footprint='QFN-48_7x7mm_P0.5mm'),
+        "USB": Part('Interface_USB', 'USB3320C-EZK', footprint='QFN-24_4x4mm_P0.5mm'),
+        "ETH": Part('Interface_Ethernet', 'LAN8720', footprint='QFN-32_5x5mm_P0.5mm'),
+        "Clock": Part('Clock_Generator', 'SI5351A-B-GT', footprint='QFN-20_3x3mm_P0.5mm'),
+        "TPU": Part('Google_TPU', 'Edge_TPU', footprint='BGA-256_17x17mm_P1.0mm'),
+        "FPGA": Part('FPGA', 'XC7A35T-1FTG256C', footprint='BGA-256_17x17mm_P1.0mm'),
+        "SDCard": Part('Memory_Card', 'SD_Card_Socket', footprint='SD_Memory_Card_Mini_Micro_SD'),
+        "IMU": Part('Sensor_IMU', 'MPU6050', footprint='QFN-24_4x4mm_P0.5mm'),
+        "Accelerometer": Part('Sensor_Accelerometer', 'ADXL345', footprint='LGA-14_3x5mm_P0.8mm'),
+        "Gyro_PID": Part('Control_Module', 'PID_Gyroscope', footprint='DIP-16_3.9x19.3mm_P2.54mm'),
+        "Serial_Bus_Driver": Part('Interface_Serial', 'MCP23017', footprint='SSOP-28_3.9x9.9mm_P0.635mm')
     }
     logging.info("Components added to the schematic.")
     return components
 
-def create_nets(circuit, components):
-    vcc = circuit.V('VCC', 'VCC', circuit.gnd, 3.3@u_V)
-    gnd = circuit.gnd
+# Define power supply nets and connect components
+def create_nets(components):
+    vcc = Net('VCC')
+    gnd = Net('GND')
 
     power_pins = {
         'ESP32_1': ['VCC', 'GND'],
@@ -70,19 +56,29 @@ def create_nets(circuit, components):
     }
 
     for comp, pins in power_pins.items():
-        circuit.X(comp, ESP32(), 'VCC', 'GND')
-
+        vcc += components[comp][pins[0]]
+        gnd += components[comp][pins[1]]
+    
     logging.info("Power nets created and connected to components.")
     return vcc, gnd
 
-def add_decoupling_caps(circuit, components, gnd):
+# Add decoupling capacitors
+def add_decoupling_caps(components, gnd):
     for comp in components:
-        for i in range(2):  # Add two decoupling caps per component
-            circuit.C(f'C_{comp}_{i}', 'VCC', gnd, 0.1@u_F)
-            logging.info(f"Decoupling capacitor added to component {comp}.")
-def connect_components(circuit, components):
+        vcc_pins = [pin.name for pin in components[comp].pins if 'VCC' in pin.name]
+        for pin in vcc_pins:
+            for i in range(2):  # Add two decoupling caps per VCC pin
+                capacitor = Part('Device', 'C', value='0.1uF', footprint='Capacitor_SMD:C_0805')
+                capacitor[1] += components[comp][pin]
+                capacitor[2] += gnd
+                logging.info(f"Decoupling capacitor added to component {comp}.")
+# Connect components
+def connect_components(components):
     esp32_1 = components['ESP32_1']
     esp32_2 = components['ESP32_2']
+    cpu = components['CPU']
+    ram = components['RAM']
+    flash = components['FLASH']
     uart = components['UART']
     usb = components['USB']
     eth = components['ETH']
@@ -94,101 +90,208 @@ def connect_components(circuit, components):
     accelerometer = components['Accelerometer']
     gyro_pid = components['Gyro_PID']
     serial_bus_driver = components['Serial_Bus_Driver']
-    ram = components['RAM']
-    cpu = components['CPU']
-
+    
     # Example connections
-    circuit.R('R1', esp32_1.GPIO1, uart.T1IN, 1@u_kΩ)
-    circuit.R('R2', esp32_1.GPIO3, uart.R1OUT, 1@u_kΩ)
+    # ESP32_1 to UART
+    esp32_1['GPIO1'] += uart['T1IN']
+    esp32_1['GPIO3'] += uart['R1OUT']
 
-    circuit.R('R3', esp32_2.GPIO1, uart.T2IN, 1@u_kΩ)
-    circuit.R('R4', esp32_2.GPIO3, uart.R2OUT, 1@u_kΩ)
+    # ESP32_2 to UART
+    esp32_2['GPIO1'] += uart['T2IN']
+    esp32_2['GPIO3'] += uart['R2OUT']
 
-    circuit.R('R5', esp32_1.GPIO21, usb.DP, 1@u_kΩ)
-    circuit.R('R6', esp32_1.GPIO22, usb.DM, 1@u_kΩ)
+    # ESP32_1 to USB
+    esp32_1['GPIO21'] += usb['DP']
+    esp32_1['GPIO22'] += usb['DM']
 
-    circuit.R('R7', esp32_2.GPIO21, usb.DP, 1@u_kΩ)
-    circuit.R('R8', esp32_2.GPIO22, usb.DM, 1@u_kΩ)
+    # ESP32_2 to USB
+    esp32_2['GPIO21'] += usb['DP']
+    esp32_2['GPIO22'] += usb['DM']
 
-    circuit.R('R9', esp32_1.GPIO0, eth.TXEN, 1@u_kΩ)
-    circuit.R('R10', esp32_1.GPIO2, eth.TXD0, 1@u_kΩ)
+    # ESP32_1 to Ethernet
+    esp32_1['GPIO0'] += eth['TXEN']
+    esp32_1['GPIO2'] += eth['TXD0']
+    esp32_1['GPIO15'] += eth['TXD1']
+    esp32_1['GPIO13'] += eth['RXER']
+    esp32_1['GPIO12'] += eth['RXD0']
+    esp32_1['GPIO14'] += eth['RXD1']
+    esp32_1['GPIO27'] += eth['CRS']
+    esp32_1['GPIO25'] += eth['MDC']
+    esp32_1['GPIO26'] += eth['MDIO']
 
-    circuit.R('R11', esp32_2.GPIO0, eth.TXEN, 1@u_kΩ)
-    circuit.R('R12', esp32_2.GPIO2, eth.TXD0, 1@u_kΩ)
+    # ESP32_2 to Ethernet
+    esp32_2['GPIO0'] += eth['TXEN']
+    esp32_2['GPIO2'] += eth['TXD0']
+    esp32_2['GPIO15'] += eth['TXD1']
+    esp32_2['GPIO13'] += eth['RXER']
+    esp32_2['GPIO12'] += eth['RXD0']
+    esp32_2['GPIO14'] += eth['RXD1']
+    esp32_2['GPIO27'] += eth['CRS']
+    esp32_2['GPIO25'] += eth['MDC']
+    esp32_2['GPIO26'] += eth['MDIO']
 
-    circuit.R('R13', esp32_1.GPIO16, clock.CLK0, 1@u_kΩ)
-    circuit.R('R14', esp32_1.GPIO17, clock.CLK1, 1@u_kΩ)
+    # ESP32_1 to Clock
+    esp32_1['GPIO16'] += clock['CLK0']
+    esp32_1['GPIO17'] += clock['CLK1']
+    esp32_1['GPIO18'] += clock['CLK2']
 
-    circuit.R('R15', esp32_2.GPIO16, clock.CLK0, 1@u_kΩ)
-    circuit.R('R16', esp32_2.GPIO17, clock.CLK1, 1@u_kΩ)
+    # ESP32_2 to Clock
+    esp32_2['GPIO16'] += clock['CLK0']
+    esp32_2['GPIO17'] += clock['CLK1']
+    esp32_2['GPIO18'] += clock['CLK2']
 
-    circuit.R('R17', esp32_1.GPIO19, tpu.I2C_SDA, 1@u_kΩ)
-    circuit.R('R18', esp32_1.GPIO23, tpu.I2C_SCL, 1@u_kΩ)
+    # ESP32_1 to TPU
+    esp32_1['GPIO19'] += tpu['I2C_SDA']
+    esp32_1['GPIO23'] += tpu['I2C_SCL']
 
-    circuit.R('R19', esp32_2.GPIO19, tpu.I2C_SDA, 1@u_kΩ)
-    circuit.R('R20', esp32_2.GPIO23, tpu.I2C_SCL, 1@u_kΩ)
+    # ESP32_2 to TPU
+    esp32_2['GPIO19'] += tpu['I2C_SDA']
+    esp32_2['GPIO23'] += tpu['I2C_SCL']
 
-    circuit.R('R21', esp32_1.GPIO4, fpga.IO0, 1@u_kΩ)
-    circuit.R('R22', esp32_1.GPIO5, fpga.IO1, 1@u_kΩ)
+    # ESP32_1 to FPGA
+    esp32_1['GPIO4'] += fpga['IO0']
+    esp32_1['GPIO5'] += fpga['IO1']
+    esp32_1['GPIO6'] += fpga['IO2']
+    esp32_1['GPIO7'] += fpga['IO3']
+    esp32_1['GPIO8'] += fpga['IO4']
+    esp32_1['GPIO9'] += fpga['IO5']
+    esp32_1['GPIO10'] += fpga['IO6']
+    esp32_1['GPIO11'] += fpga['IO7']
+    esp32_1['GPIO32'] += fpga['IO8']
+    esp32_1['GPIO33'] += fpga['IO9']
+    esp32_1['GPIO34'] += fpga['IO10']
+    esp32_1['GPIO35'] += fpga['IO11']
+    esp32_1['GPIO36'] += fpga['IO12']
+    esp32_1['GPIO39'] += fpga['IO13']
 
-    circuit.R('R23', esp32_2.GPIO4, fpga.IO0, 1@u_kΩ)
-    circuit.R('R24', esp32_2.GPIO5, fpga.IO1, 1@u_kΩ)
-
-    circuit.R('R25', esp32_1.GPIO5, sdcard.CS, 1@u_kΩ)
-    circuit.R('R26', esp32_1.GPIO18, sdcard.CLK, 1@u_kΩ)
-
-    circuit.R('R27', esp32_2.GPIO5, sdcard.CS, 1@u_kΩ)
-    circuit.R('R28', esp32_2.GPIO18, sdcard.CLK, 1@u_kΩ)
-
-    circuit.R('R29', esp32_1.GPIO32, imu.SCL, 1@u_kΩ)
-    circuit.R('R30', esp32_1.GPIO33, imu.SDA, 1@u_kΩ)
-
-    circuit.R('R31', esp32_2.GPIO32, imu.SCL, 1@u_kΩ)
-    circuit.R('R32', esp32_2.GPIO33, imu.SDA, 1@u_kΩ)
-
-    circuit.R('R33', esp32_1.GPIO25, accelerometer.SCL, 1@u_kΩ)
-    circuit.R('R34', esp32_1.GPIO26, accelerometer.SDA, 1@u_kΩ)
-
-    circuit.R('R35', esp32_2.GPIO25, accelerometer.SCL, 1@u_kΩ)
-    circuit.R('R36', esp32_2.GPIO26, accelerometer.SDA, 1@u_kΩ)
-
-    circuit.R('R37', esp32_1.GPIO14, gyro_pid.IN, 1@u_kΩ)
-    circuit.R('R38', esp32_1.GPIO15, gyro_pid.OUT, 1@u_kΩ)
-
-    circuit.R('R39', esp32_2.GPIO14, gyro_pid.IN, 1@u_kΩ)
-    circuit.R('R40', esp32_2.GPIO15, gyro_pid.OUT, 1@u_kΩ)
-
-    circuit.R('R41', esp32_1.GPIO19, serial_bus_driver.SDA, 1@u_kΩ)
-    circuit.R('R42', esp32_1.GPIO23, serial_bus_driver.SCL, 1@u_kΩ)
-
-    circuit.R('R43', esp32_2.GPIO19, serial_bus_driver.SDA, 1@u_kΩ)
-    circuit.R('R44', esp32_2.GPIO23, serial_bus_driver.SCL, 1@u_kΩ)
+    # ESP32_2 to FPGA
+    esp32_2['GPIO4'] += fpga['IO0']
+    esp32_2['GPIO5'] += fpga['IO1']
+    esp32_2['GPIO6'] += fpga['IO2']
+    esp32_2['GPIO7'] += fpga['IO3']
+    esp32_2['GPIO8'] += fpga['IO4']
+    esp32_2['GPIO9'] += fpga['IO5']
+    esp32_2['GPIO10'] += fpga['IO6']
+    esp32_2['GPIO11'] += fpga['IO7']
+    esp32_2['GPIO32'] += fpga['IO8']
+    esp32_2['GPIO33'] += fpga['IO9']
+    esp32_2['GPIO34'] += fpga['IO10']
+    esp32_2['GPIO35'] += fpga['IO11']
+    esp32_2['GPIO36'] += fpga['IO12']
+    esp32_2['GPIO39'] += fpga['IO13']
 
     # CPU to RAM
-    for i in range(16):
-        circuit.R(f'R{i+45}', cpu[f'AD{i}'], ram[f'DQ{i}'], 1@u_kΩ)
-    for i in range(13):
-        circuit.R(f'R{i+61}', cpu[f'A{i}'], ram[f'A{i}'], 1@u_kΩ)
+    cpu['AD0'] += ram['DQ0']
+    cpu['AD1'] += ram['DQ1']
+    cpu['AD2'] += ram['DQ2']
+    cpu['AD3'] += ram['DQ3']
+    cpu['AD4'] += ram['DQ4']
+    cpu['AD5'] += ram['DQ5']
+    cpu['AD6'] += ram['DQ6']
+    cpu['AD7'] += ram['DQ7']
+    cpu['AD8'] += ram['DQ8']
+    cpu['AD9'] += ram['DQ9']
+    cpu['AD10'] += ram['DQ10']
+    cpu['AD11'] += ram['DQ11']
+    cpu['AD12'] += ram['DQ12']
+    cpu['AD13'] += ram['DQ13']
+    cpu['AD14'] += ram['DQ14']
+    cpu['AD15'] += ram['DQ15']
+    cpu['A0'] += ram['A0']
+    cpu['A1'] += ram['A1']
+    cpu['A2'] += ram['A2']
+    cpu['A3'] += ram['A3']
+    cpu['A4'] += ram['A4']
+    cpu['A5'] += ram['A5']
+    cpu['A6'] += ram['A6']
+    cpu['A7'] += ram['A7']
+    cpu['A8'] += ram['A8']
+    cpu['A9'] += ram['A9']
+    cpu['A10'] += ram['A10']
+    cpu['A11'] += ram['A11']
+    cpu['A12'] += ram['A12']
+
+    # ESP32_1 to SDCard
+    esp32_1['GPIO5'] += sdcard['CS']
+    esp32_1['GPIO18'] += sdcard['CLK']
+    esp32_1['GPIO19'] += sdcard['CMD']
+    esp32_1['GPIO23'] += sdcard['D0']
+    esp32_1['GPIO22'] += sdcard['D1']
+    esp32_1['GPIO21'] += sdcard['D2']
+    esp32_1['GPIO20'] += sdcard['D3']
+
+    # ESP32_2 to SDCard
+    esp32_2['GPIO5'] += sdcard['CS']
+    esp32_2['GPIO18'] += sdcard['CLK']
+    esp32_2['GPIO19'] += sdcard['CMD']
+    esp32_2['GPIO23'] += sdcard['D0']
+    esp32_2['GPIO22'] += sdcard['D1']
+    esp32_2['GPIO21'] += sdcard['D2']
+    esp32_2['GPIO20'] += sdcard['D3']
+
+    # ESP32_1 to IMU
+    esp32_1['GPIO32'] += imu['SCL']
+    esp32_1['GPIO33'] += imu['SDA']
+
+    # ESP32_2 to IMU
+    esp32_2['GPIO32'] += imu['SCL']
+    esp32_2['GPIO33'] += imu['SDA']
+
+    # ESP32_1 to Accelerometer
+    esp32_1['GPIO25'] += accelerometer['SCL']
+    esp32_1['GPIO26'] += accelerometer['SDA']
+
+    # ESP32_2 to Accelerometer
+    esp32_2['GPIO25'] += accelerometer['SCL']
+    esp32_2['GPIO26'] += accelerometer['SDA']
+
+    # ESP32_1 to Gyro PID
+    esp32_1['GPIO14'] += gyro_pid['IN']
+    esp32_1['GPIO15'] += gyro_pid['OUT']
+
+    # ESP32_2 to Gyro PID
+    esp32_2['GPIO14'] += gyro_pid['IN']
+    esp32_2['GPIO15'] += gyro_pid['OUT']
+
+    # ESP32_1 to Serial Bus Driver
+    esp32_1['GPIO19'] += serial_bus_driver['SDA']
+    esp32_1['GPIO23'] += serial_bus_driver['SCL']
+
+    # ESP32_2 to Serial Bus Driver
+    esp32_2['GPIO19'] += serial_bus_driver['SDA']
+    esp32_2['GPIO23'] += serial_bus_driver['SCL']
 
     logging.info("Components connected.")
 
-def save_netlist(circuit, file_path):
-    circuit.write(file_path)
+# Save netlist to file
+def save_netlist(file_path):
+    generate_netlist(file_=file_path)
     logging.info(f"Netlist saved to {file_path}")
+
+# Save PCB design to file
+def save_pcb(file_path):
+    from skidl.pcb import pcb
+    pcb.save(file_path)
+    logging.info(f"PCB design saved to {file_path}")
 
 def main():
     project_directory = "Morty_project"
     os.makedirs(project_directory, exist_ok=True)
     netlist_file_path = os.path.join(project_directory, "morty_project.net")
+    pcb_file_path = os.path.join(project_directory, "morty_project.kicad_pcb")
 
     try:
-        circuit = Circuit('Morty Project')
-        components = add_components(circuit)
-        vcc, gnd = create_nets(circuit, components)
-        add_decoupling_caps(circuit, components, gnd)
-        connect_components(circuit, components)
-        save_netlist(circuit, netlist_file_path)
+        components = add_components()
+        vcc, gnd = create_nets(components)
+        add_decoupling_caps(components, gnd)
+        connect_components(components)
+        save_netlist(netlist_file_path)
+        save_pcb(pcb_file_path)
 
+        # Perform ERC
+        ERC()
+        logging.info("ERC completed successfully.")
+        
     except Exception as e:
         logging.error(f"Error in main execution: {e}")
 
