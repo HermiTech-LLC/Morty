@@ -1,7 +1,6 @@
 import os
 import subprocess
 import logging
-from skidl import Part, Net, ERC, generate_netlist
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -52,296 +51,376 @@ def ensure_libraries_installed():
         clone_or_update_repo(repo_url, dest_dir)
 
     # Make sure KiCad can find the libraries
-    kicad_path = os.path.expanduser("~/.config/kicad/sym-lib-table")
-    with open(kicad_path, 'a') as file:
-        for lib_name in LIBRARIES.keys():
-            file.write(f"(lib (name {lib_name})(type KiCad)(uri \"{os.path.join(LIB_DIR, lib_name)}\")(options \"\")(descr \"\"))\n")
-# Define components and add them to the schematic
-def add_components():
-    components = {
-        "ESP32_1": Part('ESPRESSIF', 'ESP32-WROOM-32', footprint='ESPRESSIF:ESP32-WROOM-32'),
-        "ESP32_2": Part('ESPRESSIF', 'ESP32-WROOM-32', footprint='ESPRESSIF:ESP32-WROOM-32'),
-        "CPU": Part('Microchip', 'ATMEGA2560', footprint='Package_QFP:TQFP-100_14x14mm_P0.5mm'),
-        "RAM": Part('Micron', 'MT48LC16M16A2P-75', footprint='Package_TSOP:TSOP-II-54_8x22mm_P0.8mm'),
-        "FLASH": Part('Winbond', 'W25Q64FVSSIG', footprint='Package_SO:SOIC-8_3.9x4.9mm_P1.27mm'),
-        "UART": Part('Maxim', 'MAX232', footprint='Package_SO:SOIC-16_3.9x9.9mm_P1.27mm'),
-        "PMIC": Part('TI', 'TPS65217', footprint='Package_QFN:QFN-48_7x7mm_P0.5mm'),
-        "USB": Part('Microchip', 'USB3320C-EZK', footprint='Package_QFN:QFN-24_4x4mm_P0.5mm'),
-        "ETH": Part('Microchip', 'LAN8720', footprint='Package_QFN:QFN-32_5x5mm_P0.5mm'),
-        "Clock": Part('SiliconLabs', 'SI5351A-B-GT', footprint='Package_QFN:QFN-20_3x3mm_P0.5mm'),
-        "TPU": Part('Google', 'Edge_TPU', footprint='Package_BGA:BGA-256_17x17mm_P1.0mm'),
-        "FPGA": Part('Xilinx', 'XC7A35T-1FTG256C', footprint='Package_BGA:BGA-256_17x17mm_P1.0mm'),
-        "SDCard": Part('Generic', 'SD_Card_Socket', footprint='Connector:SD_Memory_Card_Mini_Micro_SD'),
-        "IMU": Part('TDK', 'MPU6050', footprint='Package_QFN:QFN-24_4x4mm_P0.5mm'),
-        "Accelerometer": Part('AnalogDevices', 'ADXL345', footprint='Package_LGA:LGA-14_3x5mm_P0.8mm'),
-        "Gyro_PID": Part('Generic', 'PID_Gyroscope', footprint='Package_DIP:DIP-16_W7.62mm'),
-        "Serial_Bus_Driver": Part('Microchip', 'MCP23017', footprint='Package_SSOP:SSOP-28_5.3x10.2mm_P0.65mm')
-    }
-    logging.info("Components added to the schematic.")
-    return components
-
-# Define power supply nets and connect components
-def create_nets(components):
-    vcc = Net('VCC')
-    gnd = Net('GND')
-
-    power_pins = {
-        'ESP32_1': ['VCC', 'GND'],
-        'ESP32_2': ['VCC', 'GND'],
-        'CPU': ['VCC', 'GND'],
-        'RAM': ['VCC', 'GND'],
-        'FLASH': ['VCC', 'GND'],
-        'UART': ['VCC', 'GND'],
-        'PMIC': ['VCC', 'GND'],
-        'USB': ['VCC', 'GND'],
-        'ETH': ['VCC', 'GND'],
-        'Clock': ['VCC', 'GND'],
-        'TPU': ['VCC', 'GND'],
-        'FPGA': ['VCC', 'GND'],
-        'SDCard': ['VCC', 'GND'],
-        'IMU': ['VCC', 'GND'],
-        'Accelerometer': ['VCC', 'GND'],
-        'Gyro_PID': ['VCC', 'GND'],
-        'Serial_Bus_Driver': ['VCC', 'GND']
-    }
-
-    for comp, pins in power_pins.items():
-        vcc += components[comp][pins[0]]
-        gnd += components[comp][pins[1]]
+    sym_lib_table_path = os.path.expanduser("~/.config/kicad/sym-lib-table")
+    fp_lib_table_path = os.path.expanduser("~/.config/kicad/fp-lib-table")
     
-    logging.info("Power nets created and connected to components.")
-    return vcc, gnd
+    with open(sym_lib_table_path, 'a') as sym_file, open(fp_lib_table_path, 'a') as fp_file:
+        for lib_name in LIBRARIES.keys():
+            sym_file.write(f"(lib (name {lib_name})(type KiCad)(uri \"{os.path.join(LIB_DIR, lib_name)}\")(options \"\")(descr \"\"))\n")
+            fp_file.write(f"(lib (name {lib_name})(type KiCad)(uri \"{os.path.join(LIB_DIR, lib_name)}\")(options \"\")(descr \"\"))\n")
 
-# Add decoupling capacitors
-def add_decoupling_caps(components, gnd):
-    for comp in components:
-        vcc_pins = [pin.name for pin in components[comp].pins if 'VCC' in pin.name]
-        for pin in vcc_pins:
-            for i in range(2):  # Add two decoupling caps per VCC pin
-                capacitor = Part('Device', 'C', value='0.1uF', footprint='Capacitor_SMD:C_0805')
-                capacitor[1] += components[comp][pin]
-                capacitor[2] += gnd
-                logging.info(f"Decoupling capacitor added to component {comp}.")
-# Connect components
-def connect_components(components):
-    esp32_1 = components['ESP32_1']
-    esp32_2 = components['ESP32_2']
-    cpu = components['CPU']
-    ram = components['RAM']
-    flash = components['FLASH']
-    uart = components['UART']
-    usb = components['USB']
-    eth = components['ETH']
-    clock = components['Clock']
-    tpu = components['TPU']
-    fpga = components['FPGA']
-    sdcard = components['SDCard']
-    imu = components['IMU']
-    accelerometer = components['Accelerometer']
-    gyro_pid = components['Gyro_PID']
-    serial_bus_driver = components['Serial_Bus_Driver']
+# Generate schematic
+def generate_schematic(file_path):
+    logging.info(f"Generating schematic at {file_path}")
+    with open(file_path, 'w') as sch_file:
+        sch_file.write("EESchema Schematic File Version 4\n")
+        sch_file.write("LIBS:Device\n")
+        sch_file.write("EELAYER 25 0\n")
+        sch_file.write("EELAYER END\n")
+        sch_file.write("$Descr A4 11693 8268\n")
+        sch_file.write("encoding utf-8\n")
+        sch_file.write("Sheet 1 1\n")
+        sch_file.write("Title \"Morty Project\"\n")
+        sch_file.write("Date \"2024-07-28\"\n")
+        sch_file.write("Rev \"1\"\n")
+        sch_file.write("Comp \"\"\n")
+        sch_file.write("Comment1 \"\"\n")
+        sch_file.write("Comment2 \"\"\n")
+        sch_file.write("Comment3 \"\"\n")
+        sch_file.write("Comment4 \"\"\n")
+        sch_file.write("$EndDescr\n")
+        
+        components = [
+            ("ESP32", "U1", "ESP32-WROOM-32"),
+            ("ATMEGA328P", "U2", "ATMEGA"),
+            ("MT25QL128", "U3", "MICRON"),
+            ("W25Q64", "U4", "WINBOND"),
+            ("MAX232", "U5", "MAXIM"),
+            ("LM1117", "U6", "TI"),
+            ("PIC16F877A", "U7", "MICROCHIP"),
+            ("LAN8720", "U8", "LAN8720"),
+            ("SI5351A", "U9", "SI5351A"),
+            ("GOOGLE-EDGE-TPU", "U10", "GOOGLE_EDGE_TPU"),
+            ("XC7A35T", "U11", "XILINX"),
+            ("GENERIC", "U12", "GENERIC"),
+            ("TDK", "U13", "TDK"),
+            ("ADXL345", "U14", "ANALOG_DEVICES")
+        ]
+        
+        for comp, ref, lib in components:
+            sch_file.write(f"$Comp\nL {lib}:{comp} {ref}\nU 1 1 5F7A3243\nP 300 200\nF 0 \"{ref}\" H 300 220 50  0000 C CNN\nF 1 \"\" H 300 180 50  0000 C CNN\nF 2 \"\" H 300 200 50  0001 C CNN\nF 3 \"\" H 300 200 50  0001 C CNN\n\t1    300 200\n\t1    0    0    -1\n$EndComp\n")
+        
+        sch_file.write("$EndSCHEMATC\n")
+    logging.info(f"Schematic file generated: {file_path}")
 
-    # Example connections
-    # ESP32_1 to UART
-    esp32_1['GPIO1'] += uart['T1IN']
-    esp32_1['GPIO3'] += uart['R1OUT']
+# Generate netlist from schematic
+def generate_netlist(schematic_file_path, netlist_path):
+    logging.info("Generating netlist from schematic")
+    command = f"kicad-cli sch export netlist {schematic_file_path} -o {netlist_path}"
+    run_command(command)
+    logging.info(f"Netlist saved to {netlist_path}")
 
-    # ESP32_2 to UART
-    esp32_2['GPIO1'] += uart['T2IN']
-    esp32_2['GPIO3'] += uart['R2OUT']
-
-    # ESP32_1 to USB
-    esp32_1['GPIO21'] += usb['DP']
-    esp32_1['GPIO22'] += usb['DM']
-
-    # ESP32_2 to USB
-    esp32_2['GPIO21'] += usb['DP']
-    esp32_2['GPIO22'] += usb['DM']
-
-    # ESP32_1 to Ethernet
-    esp32_1['GPIO0'] += eth['TXEN']
-    esp32_1['GPIO2'] += eth['TXD0']
-    esp32_1['GPIO15'] += eth['TXD1']
-    esp32_1['GPIO13'] += eth['RXER']
-    esp32_1['GPIO12'] += eth['RXD0']
-    esp32_1['GPIO14'] += eth['RXD1']
-    esp32_1['GPIO27'] += eth['CRS']
-    esp32_1['GPIO25'] += eth['MDC']
-    esp32_1['GPIO26'] += eth['MDIO']
-
-    # ESP32_2 to Ethernet
-    esp32_2['GPIO0'] += eth['TXEN']
-    esp32_2['GPIO2'] += eth['TXD0']
-    esp32_2['GPIO15'] += eth['TXD1']
-    esp32_2['GPIO13'] += eth['RXER']
-    esp32_2['GPIO12'] += eth['RXD0']
-    esp32_2['GPIO14'] += eth['RXD1']
-    esp32_2['GPIO27'] += eth['CRS']
-    esp32_2['GPIO25'] += eth['MDC']
-    esp32_2['GPIO26'] += eth['MDIO']
-
-    # ESP32_1 to Clock
-    esp32_1['GPIO16'] += clock['CLK0']
-    esp32_1['GPIO17'] += clock['CLK1']
-    esp32_1['GPIO18'] += clock['CLK2']
-
-    # ESP32_2 to Clock
-    esp32_2['GPIO16'] += clock['CLK0']
-    esp32_2['GPIO17'] += clock['CLK1']
-    esp32_2['GPIO18'] += clock['CLK2']
-
-    # ESP32_1 to TPU
-    esp32_1['GPIO19'] += tpu['I2C_SDA']
-    esp32_1['GPIO23'] += tpu['I2C_SCL']
-
-    # ESP32_2 to TPU
-    esp32_2['GPIO19'] += tpu['I2C_SDA']
-    esp32_2['GPIO23'] += tpu['I2C_SCL']
-
-    # ESP32_1 to FPGA
-    esp32_1['GPIO4'] += fpga['IO0']
-    esp32_1['GPIO5'] += fpga['IO1']
-    esp32_1['GPIO6'] += fpga['IO2']
-    esp32_1['GPIO7'] += fpga['IO3']
-    esp32_1['GPIO8'] += fpga['IO4']
-    esp32_1['GPIO9'] += fpga['IO5']
-    esp32_1['GPIO10'] += fpga['IO6']
-    esp32_1['GPIO11'] += fpga['IO7']
-    esp32_1['GPIO32'] += fpga['IO8']
-    esp32_1['GPIO33'] += fpga['IO9']
-    esp32_1['GPIO34'] += fpga['IO10']
-    esp32_1['GPIO35'] += fpga['IO11']
-    esp32_1['GPIO36'] += fpga['IO12']
-    esp32_1['GPIO39'] += fpga['IO13']
-
-    # ESP32_2 to FPGA
-    esp32_2['GPIO4'] += fpga['IO0']
-    esp32_2['GPIO5'] += fpga['IO1']
-    esp32_2['GPIO6'] += fpga['IO2']
-    esp32_2['GPIO7'] += fpga['IO3']
-    esp32_2['GPIO8'] += fpga['IO4']
-    esp32_2['GPIO9'] += fpga['IO5']
-    esp32_2['GPIO10'] += fpga['IO6']
-    esp32_2['GPIO11'] += fpga['IO7']
-    esp32_2['GPIO32'] += fpga['IO8']
-    esp32_2['GPIO33'] += fpga['IO9']
-    esp32_2['GPIO34'] += fpga['IO10']
-    esp32_2['GPIO35'] += fpga['IO11']
-    esp32_2['GPIO36'] += fpga['IO12']
-    esp32_2['GPIO39'] += fpga['IO13']
-    # CPU to RAM
-    cpu['AD0'] += ram['DQ0']
-    cpu['AD1'] += ram['DQ1']
-    cpu['AD2'] += ram['DQ2']
-    cpu['AD3'] += ram['DQ3']
-    cpu['AD4'] += ram['DQ4']
-    cpu['AD5'] += ram['DQ5']
-    cpu['AD6'] += ram['DQ6']
-    cpu['AD7'] += ram['DQ7']
-    cpu['AD8'] += ram['DQ8']
-    cpu['AD9'] += ram['DQ9']
-    cpu['AD10'] += ram['DQ10']
-    cpu['AD11'] += ram['DQ11']
-    cpu['AD12'] += ram['DQ12']
-    cpu['AD13'] += ram['DQ13']
-    cpu['AD14'] += ram['DQ14']
-    cpu['AD15'] += ram['DQ15']
-    cpu['A0'] += ram['A0']
-    cpu['A1'] += ram['A1']
-    cpu['A2'] += ram['A2']
-    cpu['A3'] += ram['A3']
-    cpu['A4'] += ram['A4']
-    cpu['A5'] += ram['A5']
-    cpu['A6'] += ram['A6']
-    cpu['A7'] += ram['A7']
-    cpu['A8'] += ram['A8']
-    cpu['A9'] += ram['A9']
-    cpu['A10'] += ram['A10']
-    cpu['A11'] += ram['A11']
-    cpu['A12'] += ram['A12']
-
-    # ESP32_1 to SDCard
-    esp32_1['GPIO5'] += sdcard['CS']
-    esp32_1['GPIO18'] += sdcard['CLK']
-    esp32_1['GPIO19'] += sdcard['CMD']
-    esp32_1['GPIO23'] += sdcard['D0']
-    esp32_1['GPIO22'] += sdcard['D1']
-    esp32_1['GPIO21'] += sdcard['D2']
-    esp32_1['GPIO20'] += sdcard['D3']
-
-    # ESP32_2 to SDCard
-    esp32_2['GPIO5'] += sdcard['CS']
-    esp32_2['GPIO18'] += sdcard['CLK']
-    esp32_2['GPIO19'] += sdcard['CMD']
-    esp32_2['GPIO23'] += sdcard['D0']
-    esp32_2['GPIO22'] += sdcard['D1']
-    esp32_2['GPIO21'] += sdcard['D2']
-    esp32_2['GPIO20'] += sdcard['D3']
-
-    # ESP32_1 to IMU
-    esp32_1['GPIO32'] += imu['SCL']
-    esp32_1['GPIO33'] += imu['SDA']
-
-    # ESP32_2 to IMU
-    esp32_2['GPIO32'] += imu['SCL']
-    esp32_2['GPIO33'] += imu['SDA']
-
-    # ESP32_1 to Accelerometer
-    esp32_1['GPIO25'] += accelerometer['SCL']
-    esp32_1['GPIO26'] += accelerometer['SDA']
-
-    # ESP32_2 to Accelerometer
-    esp32_2['GPIO25'] += accelerometer['SCL']
-    esp32_2['GPIO26'] += accelerometer['SDA']
-
-    # ESP32_1 to Gyro PID
-    esp32_1['GPIO14'] += gyro_pid['IN']
-    esp32_1['GPIO15'] += gyro_pid['OUT']
-
-    # ESP32_2 to Gyro PID
-    esp32_2['GPIO14'] += gyro_pid['IN']
-    esp32_2['GPIO15'] += gyro_pid['OUT']
-
-    # ESP32_1 to Serial Bus Driver
-    esp32_1['GPIO19'] += serial_bus_driver['SDA']
-    esp32_1['GPIO23'] += serial_bus_driver['SCL']
-
-    # ESP32_2 to Serial Bus Driver
-    esp32_2['GPIO19'] += serial_bus_driver['SDA']
-    esp32_2['GPIO23'] += serial_bus_driver['SCL']
-
-    logging.info("Components connected.")
-
-# Save netlist to file
-def save_netlist(file_path):
-    generate_netlist(file_=file_path)
-    logging.info(f"Netlist saved to {file_path}")
-
-# Save PCB design to file
-def save_pcb(file_path):
-    from skidl.pcb import pcb
-    pcb.save(file_path)
-    logging.info(f"PCB design saved to {file_path}")
+# Generate PCB from netlist
+def generate_pcb(netlist_path, pcb_file_path):
+    logging.info(f"Generating PCB from netlist at {pcb_file_path}")
+    pcb_content = """
+    (kicad_pcb (version 20210606) (generator pcbnew)
+    (page A4)
+    (title_block
+        (title "Morty Project")
+        (company "")
+        (rev "")
+        (date "2024-07-28")
+        (comment 1 "")
+        (comment 2 "")
+        (comment 3 "")
+        (comment 4 "")
+    )
+    (general
+        (links 14)
+        (no_connects 0)
+        (area 0 0 210 297)
+        (thickness 1.6)
+        (drawings 2)
+        (tracks 0)
+        (zones 0)
+        (modules 14)
+        (nets 14)
+    )
+    (layers
+        (0 F.Cu signal)
+        (31 B.Cu signal)
+        (32 B.Adhes user)
+        (33 F.Adhes user)
+        (34 B.Paste user)
+        (35 F.Paste user)
+        (36 B.SilkS user)
+        (37 F.SilkS user)
+        (38 B.Mask user)
+        (39 F.Mask user)
+        (40 Dwgs.User user)
+        (41 Cmts.User user)
+        (42 Eco1.User user)
+        (43 Eco2.User user)
+        (44 Edge.Cuts user)
+        (45 Margin user)
+        (46 B.CrtYd user)
+        (47 F.CrtYd user)
+        (48 B.Fab user)
+        (49 F.Fab user)
+    )
+    (setup
+        (last_trace_width 0.25)
+        (trace_clearance 0.2)
+        (zone_clearance 0.508)
+        (zone_45_only no)
+        (trace_min 0.2)
+        (segment_width 0.2)
+        (edge_width 0.05)
+        (via_size 0.6)
+        (via_drill 0.4)
+        (via_min_size 0.4)
+        (via_min_drill 0.3)
+        (uvia_size 0.3)
+        (uvia_drill 0.1)
+        (uvias_allowed no)
+        (uvia_min_size 0.2)
+        (uvia_min_drill 0.1)
+        (pcb_text_width 0.3)
+        (pcb_text_size 1.5 1.5)
+        (mod_edge_width 0.15)
+        (mod_text_size 1 1)
+        (mod_text_width 0.15)
+        (pad_size 1.524 1.524)
+        (pad_drill 0.762)
+        (pad_to_mask_clearance 0.2)
+        (solder_mask_min_width 0.1)
+        (draw_clearance 0.2)
+        (solder_mask_min_width 0.05)
+        (mod_clearance 0.1)
+        (mod_clearance_width 0.1)
+        (mod_pad_to_mask_clearance 0.2)
+        (mod_mask_margin 0.1)
+        (mod_mask_min_width 0.1)
+        (edge_clearance 0.01)
+        (edge_45_clearance 0.05)
+        (text_outside_min_clearance 0.2)
+        (text_outside_pad_to_mask_clearance 0.2)
+        (pad_clearance 0.2)
+        (silk_top 0.12)
+        (silk_bottom 0.12)
+        (mask_top 0.12)
+        (mask_bottom 0.12)
+        (paste_top 0.12)
+        (paste_bottom 0.12)
+        (via_type normal)
+        (thermal_gap 0.508)
+        (thermal_bridge_width 0.508)
+        (zone_clearance 0.508)
+        (zone_45_only yes)
+    )
+    (net 0 "")
+    (net 1 "/NetU1-1")
+    (net 2 "/NetU2-1")
+    (net 3 "/NetU3-1")
+    (net 4 "/NetU4-1")
+    (net 5 "/NetU5-1")
+    (net 6 "/NetU6-1")
+    (net 7 "/NetU7-1")
+    (net 8 "/NetU8-1")
+    (net 9 "/NetU9-1")
+    (net 10 "/NetU10-1")
+    (net 11 "/NetU11-1")
+    (net 12 "/NetU12-1")
+    (net 13 "/NetU13-1")
+    (net 14 "/NetU14-1")
+    (net_class Default "This is the default net class."
+        (clearance 0.2)
+        (trace_width 0.25)
+        (via_dia 0.6)
+        (via_drill 0.4)
+        (uvia_dia 0.3)
+        (uvia_drill 0.1)
+    )
+    (module ESP32-WROOM-32:ESP32 (layer F.Cu) (tedit 5F7A3243)
+        (at 100 100)
+        (path /5F7A3243)
+        (fp_text reference U1 (at 0 0) (layer F.SilkS)
+            (effects (font (size 1 1) (thickness 0.15)))
+        )
+        (fp_text value ESP32 (at 0 -1.5) (layer F.Fab)
+            (effects (font (size 1 1) (thickness 0.15)))
+        )
+        (pad 1 smd rect (at -1 0) (size 1 1) (layers F.Cu F.Paste F.Mask))
+        (pad 2 smd rect (at 1 0) (size 1 1) (layers F.Cu F.Paste F.Mask))
+    )
+    (module ATMEGA:ATMEGA328P (layer F.Cu) (tedit 5F7A3244)
+        (at 100 150)
+        (path /5F7A3244)
+        (fp_text reference U2 (at 0 0) (layer F.SilkS)
+            (effects (font (size 1 1) (thickness 0.15)))
+        )
+        (fp_text value ATMEGA328P (at 0 -1.5) (layer F.Fab)
+            (effects (font (size 1 1) (thickness 0.15)))
+        )
+        (pad 1 smd rect (at -1 0) (size 1 1) (layers F.Cu F.Paste F.Mask))
+        (pad 2 smd rect (at 1 0) (size 1 1) (layers F.Cu F.Paste F.Mask))
+    )
+    (module MICRON:MT25QL128 (layer F.Cu) (tedit 5F7A3245)
+        (at 100 200)
+        (path /5F7A3245)
+        (fp_text reference U3 (at 0 0) (layer F.SilkS)
+            (effects (font (size 1 1) (thickness 0.15)))
+        )
+        (fp_text value MT25QL128 (at 0 -1.5) (layer F.Fab)
+            (effects (font (size 1 1) (thickness 0.15)))
+        )
+        (pad 1 smd rect (at -1 0) (size 1 1) (layers F.Cu F.Paste F.Mask))
+        (pad 2 smd rect (at 1 0) (size 1 1) (layers F.Cu F.Paste F.Mask))
+    )
+    (module WINBOND:W25Q64 (layer F.Cu) (tedit 5F7A3246)
+        (at 100 250)
+        (path /5F7A3246)
+        (fp_text reference U4 (at 0 0) (layer F.SilkS)
+            (effects (font (size 1 1) (thickness 0.15)))
+        )
+        (fp_text value W25Q64 (at 0 -1.5) (layer F.Fab)
+            (effects (font (size 1 1) (thickness 0.15)))
+        )
+        (pad 1 smd rect (at -1 0) (size 1 1) (layers F.Cu F.Paste F.Mask))
+        (pad 2 smd rect (at 1 0) (size 1 1) (layers F.Cu F.Paste F.Mask))
+    )
+    (module MAXIM:MAX232 (layer F.Cu) (tedit 5F7A3247)
+        (at 100 300)
+        (path /5F7A3247)
+        (fp_text reference U5 (at 0 0) (layer F.SilkS)
+            (effects (font (size 1 1) (thickness 0.15)))
+        )
+        (fp_text value MAX232 (at 0 -1.5) (layer F.Fab)
+            (effects (font (size 1 1) (thickness 0.15)))
+        )
+        (pad 1 smd rect (at -1 0) (size 1 1) (layers F.Cu F.Paste F.Mask))
+        (pad 2 smd rect (at 1 0) (size 1 1) (layers F.Cu F.Paste F.Mask))
+    )
+    (module TI:LM1117 (layer F.Cu) (tedit 5F7A3248)
+        (at 100 350)
+        (path /5F7A3248)
+        (fp_text reference U6 (at 0 0) (layer F.SilkS)
+            (effects (font (size 1 1) (thickness 0.15)))
+        )
+        (fp_text value LM1117 (at 0 -1.5) (layer F.Fab)
+            (effects (font (size 1 1) (thickness 0.15)))
+        )
+        (pad 1 smd rect (at -1 0) (size 1 1) (layers F.Cu F.Paste F.Mask))
+        (pad 2 smd rect (at 1 0) (size 1 1) (layers F.Cu F.Paste F.Mask))
+    )
+    (module MICROCHIP:PIC16F877A (layer F.Cu) (tedit 5F7A3249)
+        (at 100 400)
+        (path /5F7A3249)
+        (fp_text reference U7 (at 0 0) (layer F.SilkS)
+            (effects (font (size 1 1) (thickness 0.15)))
+        )
+        (fp_text value PIC16F877A (at 0 -1.5) (layer F.Fab)
+            (effects (font (size 1 1) (thickness 0.15)))
+        )
+        (pad 1 smd rect (at -1 0) (size 1 1) (layers F.Cu F.Paste F.Mask))
+        (pad 2 smd rect (at 1 0) (size 1 1) (layers F.Cu F.Paste F.Mask))
+    )
+    (module LAN8720:LAN8720 (layer F.Cu) (tedit 5F7A3250)
+        (at 100 450)
+        (path /5F7A3250)
+        (fp_text reference U8 (at 0 0) (layer F.SilkS)
+            (effects (font (size 1 1) (thickness 0.15)))
+        )
+        (fp_text value LAN8720 (at 0 -1.5) (layer F.Fab)
+            (effects (font (size 1 1) (thickness 0.15)))
+        )
+        (pad 1 smd rect (at -1 0) (size 1 1) (layers F.Cu F.Paste F.Mask))
+        (pad 2 smd rect (at 1 0) (size 1 1) (layers F.Cu F.Paste F.Mask))
+    )
+    (module SI5351A:SI5351A (layer F.Cu) (tedit 5F7A3251)
+        (at 100 500)
+        (path /5F7A3251)
+        (fp_text reference U9 (at 0 0) (layer F.SilkS)
+            (effects (font (size 1 1) (thickness 0.15)))
+        )
+        (fp_text value SI5351A (at 0 -1.5) (layer F.Fab)
+            (effects (font (size 1 1) (thickness 0.15)))
+        )
+        (pad 1 smd rect (at -1 0) (size 1 1) (layers F.Cu F.Paste F.Mask))
+        (pad 2 smd rect (at 1 0) (size 1 1) (layers F.Cu F.Paste F.Mask))
+    )
+    (module GOOGLE_EDGE_TPU:GOOGLE-EDGE-TPU (layer F.Cu) (tedit 5F7A3252)
+        (at 100 550)
+        (path /5F7A3252)
+        (fp_text reference U10 (at 0 0) (layer F.SilkS)
+            (effects (font (size 1 1) (thickness 0.15)))
+        )
+        (fp_text value GOOGLE-EDGE-TPU (at 0 -1.5) (layer F.Fab)
+            (effects (font (size 1 1) (thickness 0.15)))
+        )
+        (pad 1 smd rect (at -1 0) (size 1 1) (layers F.Cu F.Paste F.Mask))
+        (pad 2 smd rect (at 1 0) (size 1 1) (layers F.Cu F.Paste F.Mask))
+    )
+    (module XILINX:XC7A35T (layer F.Cu) (tedit 5F7A3253)
+        (at 100 600)
+        (path /5F7A3253)
+        (fp_text reference U11 (at 0 0) (layer F.SilkS)
+            (effects (font (size 1 1) (thickness 0.15)))
+        )
+        (fp_text value XC7A35T (at 0 -1.5) (layer F.Fab)
+            (effects (font (size 1 1) (thickness 0.15)))
+        )
+        (pad 1 smd rect (at -1 0) (size 1 1) (layers F.Cu F.Paste F.Mask))
+        (pad 2 smd rect (at 1 0) (size 1 1) (layers F.Cu F.Paste F.Mask))
+    )
+    (module GENERIC:GENERIC (layer F.Cu) (tedit 5F7A3254)
+        (at 100 650)
+        (path /5F7A3254)
+        (fp_text reference U12 (at 0 0) (layer F.SilkS)
+            (effects (font (size 1 1) (thickness 0.15)))
+        )
+        (fp_text value GENERIC (at 0 -1.5) (layer F.Fab)
+            (effects (font (size 1 1) (thickness 0.15)))
+        )
+        (pad 1 smd rect (at -1 0) (size 1 1) (layers F.Cu F.Paste F.Mask))
+        (pad 2 smd rect (at 1 0) (size 1 1) (layers F.Cu F.Paste F.Mask))
+    )
+    (module TDK:TDK (layer F.Cu) (tedit 5F7A3255)
+        (at 100 700)
+        (path /5F7A3255)
+        (fp_text reference U13 (at 0 0) (layer F.SilkS)
+            (effects (font (size 1 1) (thickness 0.15)))
+        )
+        (fp_text value TDK (at 0 -1.5) (layer F.Fab)
+            (effects (font (size 1 1) (thickness 0.15)))
+        )
+        (pad 1 smd rect (at -1 0) (size 1 1) (layers F.Cu F.Paste F.Mask))
+        (pad 2 smd rect (at 1 0) (size 1 1) (layers F.Cu F.Paste F.Mask))
+    )
+    (module ANALOG_DEVICES:ADXL345 (layer F.Cu) (tedit 5F7A3256)
+        (at 100 750)
+        (path /5F7A3256)
+        (fp_text reference U14 (at 0 0) (layer F.SilkS)
+            (effects (font (size 1 1) (thickness 0.15)))
+        )
+        (fp_text value ADXL345 (at 0 -1.5) (layer F.Fab)
+            (effects (font (size 1 1) (thickness 0.15)))
+        )
+        (pad 1 smd rect (at -1 0) (size 1 1) (layers F.Cu F.Paste F.Mask))
+        (pad 2 smd rect (at 1 0) (size 1 1) (layers F.Cu F.Paste F.Mask))
+    )
+    )
+    """
+    with open(pcb_file_path, 'w') as pcb_file:
+        pcb_file.write(pcb_content)
+    command = f"kicad-cli pcb export step {pcb_file_path} -o {pcb_file_path.replace('.kicad_pcb', '.step')}"
+    run_command(command)
+    logging.info(f"PCB file generated: {pcb_file_path}")
 
 def main():
     project_directory = "Morty_project"
     os.makedirs(project_directory, exist_ok=True)
+    schematic_file_path = os.path.join(project_directory, "morty_project.kicad_sch")
     netlist_file_path = os.path.join(project_directory, "morty_project.net")
     pcb_file_path = os.path.join(project_directory, "morty_project.kicad_pcb")
 
     try:
         ensure_libraries_installed()
-        components = add_components()
-        vcc, gnd = create_nets(components)
-        add_decoupling_caps(components, gnd)
-        connect_components(components)
-        save_netlist(netlist_file_path)
-        save_pcb(pcb_file_path)
+        generate_schematic(schematic_file_path)
+        generate_netlist(schematic_file_path, netlist_file_path)
+        generate_pcb(netlist_file_path, pcb_file_path)
 
-        # Perform ERC
-        ERC()
-        logging.info("ERC completed successfully.")
-        
     except Exception as e:
         logging.error(f"Error in main execution: {e}")
 
