@@ -50,16 +50,14 @@ def ensure_libraries_installed():
         dest_dir = os.path.join(LIB_DIR, lib_name)
         clone_or_update_repo(repo_url, dest_dir)
 
-    # Make sure KiCad can find the libraries
     sym_lib_table_path = os.path.expanduser("~/.config/kicad/sym-lib-table")
     fp_lib_table_path = os.path.expanduser("~/.config/kicad/fp-lib-table")
-    
+
     with open(sym_lib_table_path, 'a') as sym_file, open(fp_lib_table_path, 'a') as fp_file:
         for lib_name in LIBRARIES.keys():
             sym_file.write(f"(lib (name {lib_name})(type KiCad)(uri \"{os.path.join(LIB_DIR, lib_name)}\")(options \"\")(descr \"\"))\n")
             fp_file.write(f"(lib (name {lib_name})(type KiCad)(uri \"{os.path.join(LIB_DIR, lib_name)}\")(options \"\")(descr \"\"))\n")
 
-# Generate schematic
 def generate_schematic(file_path):
     logging.info(f"Generating schematic at {file_path}")
     with open(file_path, 'w') as sch_file:
@@ -100,17 +98,15 @@ def generate_schematic(file_path):
         for comp, ref, lib in components:
             sch_file.write(f"$Comp\nL {lib}:{comp} {ref}\nU 1 1 5F7A3243\nP 300 200\nF 0 \"{ref}\" H 300 220 50  0000 C CNN\nF 1 \"\" H 300 180 50  0000 C CNN\nF 2 \"\" H 300 200 50  0001 C CNN\nF 3 \"\" H 300 200 50  0001 C CNN\n\t1    300 200\n\t1    0    0    -1\n$EndComp\n")
         
-        sch_file.write("$EndSCHEMATC\n")
+        sch_file.write("$EndSCHEMATIC\n")
     logging.info(f"Schematic file generated: {file_path}")
 
-# Generate netlist from schematic
 def generate_netlist(schematic_file_path, netlist_path):
     logging.info("Generating netlist from schematic")
     command = f"kicad-cli sch export netlist {schematic_file_path} -o {netlist_path}"
     run_command(command)
     logging.info(f"Netlist saved to {netlist_path}")
 
-# Generate PCB from netlist
 def generate_pcb(netlist_path, pcb_file_path):
     logging.info(f"Generating PCB from netlist at {pcb_file_path}")
     pcb_content = """
@@ -420,7 +416,6 @@ def main():
         generate_schematic(schematic_file_path)
         generate_netlist(schematic_file_path, netlist_file_path)
         generate_pcb(netlist_file_path, pcb_file_path)
-
     except Exception as e:
         logging.error(f"Error in main execution: {e}")
 
