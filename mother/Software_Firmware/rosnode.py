@@ -1,14 +1,14 @@
 import rospy
 import numpy as np
-import serial
 from sensor_msgs.msg import JointState
 from geometry_msgs.msg import Wrench
 from std_msgs.msg import Float64MultiArray
 from sklearn.preprocessing import StandardScaler
 from collections import deque
-import casadi as ca
+import socket
+import struct
 
-# ROS Node Initialization
+# Initialize ROS node and publisher
 def initialize_ros_node():
     rospy.init_node('bipedal_humanoid_pinn', anonymous=True)
     control_pub = rospy.Publisher('/control_signals', Float64MultiArray, queue_size=10)
@@ -50,6 +50,7 @@ def joint_state_callback(msg):
             data_storage["joint_angles_normalized"] = norm_joint_angles
             data_storage["velocities_normalized"] = norm_velocities
             data_storage["torques_normalized"] = norm_torques
+            send_data_to_tpu()  # Send data to TPU whenever we have a full set
     except Exception as e:
         rospy.logerr(f"Error in joint_state_callback: {e}")
 
@@ -89,55 +90,42 @@ def subscribe_to_ros_topics():
 
 subscribe_to_ros_topics()
 
-# Initialize serial communication with FPGA
-def initialize_serial(port='/dev/ttyUSB0', baudrate=9600):
+# Initialize TCP/IP communication with TPU
+def initialize_socket_connection():
     try:
-        ser = serial.Serial(port, baudrate)
-        return ser
-    except serial.SerialException as e:
-        rospy.logerr(f"Failed to initialize serial communication: {e}")
+        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client_socket.connect(('TPU_IP_ADDRESS', TPU_PORT))  # Replace with actual TPU IP and PORT
+        return client_socket
+    except socket.error as e:
+        rospy.logerr(f"Failed to initialize socket connection: {e}")
         return None
 
-ser = initialize_serial()
+client_socket = initialize_socket_connection()
 
-# Define the optimization problem using CasADi
-def define_optimization_problem():
-    n_controls = 60
-    u = ca.MX.sym('u', n_controls)
+# Send data to TPU and receive control signals
+def send_data_to_tpu():
+    if client_socket:
+        try:
+            input_data = np.hstack((
+                data_storage["joint_angles_normalized"][-1],
+                data_storage["velocities_normalized"][-1],
+                data_storage["torques_normalized"][-1],
+                data_storage["foot_forces_normalized"][-1],
+                data_storage["hand_joint_angles_normalized"][-1],
+                data_storage["object_forces_normalized"][-1]
+            )).astype(np.float32)
 
-    # Define the objective function (example: minimize the control effort)
-    objective = ca.mtimes(u.T, u)
+            client_socket.sendall(input_data.tobytes())
+            control_signal_data = client_socket.recv(240)  # 60 float32 values
+            control_signals = np.frombuffer(control_signal_data, dtype=np.float32)
+            publish_control_signals(control_signals)
+        except socket.error as e:
+            rospy.logerr(f"Error in communication with TPU: {e}")
 
-    # Define constraints (example: control signals must be within certain limits)
-    lb_u = -np.ones(n_controls) * 1.0  # Lower bound for control signals
-    ub_u = np.ones(n_controls) * 1.0  # Upper bound for control signals
-
-    nlp = {'x': u, 'f': objective}
-    opts = {'ipopt.print_level': 0, 'print_time': 0}
-    solver = ca.nlpsol('solver', 'ipopt', nlp, opts)
-    
-    return solver, lb_u, ub_u
-
-solver, lb_u, ub_u = define_optimization_problem()
-
-# Send and receive data to/from FPGA
-def communicate_with_fpga(sensor_data):
-    try:
-        # Send sensor data
-        ser.write(sensor_data.tobytes())
-        
-        # Read control signal
-        control_signal = ser.read(size=240)  # Adjusted size for 60 float32 values
-        control_signal = np.frombuffer(control_signal, dtype=np.float32)
-        
-        # Optimize control signal
-        sol = solver(x0=control_signal, lbg=lb_u, ubg=ub_u)
-        optimized_control_signal = sol['x'].full().flatten()
-        
-        return optimized_control_signal
-    except Exception as e:
-        rospy.logerr(f"Error in communication with FPGA: {e}")
-        return np.zeros(60, dtype=np.float32)  # Return a safe default control signal in case of error
+# Publish control signals
+def publish_control_signals(control_signals):
+    control_msg = Float64MultiArray(data=control_signals)
+    control_pub.publish(control_msg)
 
 if __name__ == "__main__":
     rospy.spin()
