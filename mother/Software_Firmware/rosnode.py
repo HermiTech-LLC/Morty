@@ -1,5 +1,3 @@
-# rosnode.py
-
 import rospy
 import numpy as np
 import serial
@@ -8,6 +6,7 @@ from geometry_msgs.msg import Wrench
 from std_msgs.msg import Float64MultiArray
 from sklearn.preprocessing import StandardScaler
 from collections import deque
+import casadi as ca
 
 # ROS Node Initialization
 def initialize_ros_node():
@@ -92,6 +91,26 @@ subscribe_to_ros_topics()
 # Initialize serial communication with FPGA
 ser = serial.Serial('/dev/ttyUSB0', 9600)
 
+# Define the optimization problem using CasADi
+def define_optimization_problem():
+    n_controls = 60
+    u = ca.MX.sym('u', n_controls)
+
+    # Define the objective function (example: minimize the control effort)
+    objective = ca.mtimes(u.T, u)
+
+    # Define constraints (example: control signals must be within certain limits)
+    lb_u = -np.ones(n_controls) * 1.0  # Lower bound for control signals
+    ub_u = np.ones(n_controls) * 1.0  # Upper bound for control signals
+
+    nlp = {'x': u, 'f': objective}
+    opts = {'ipopt.print_level': 0, 'print_time': 0}
+    solver = ca.nlpsol('solver', 'ipopt', nlp, opts)
+    
+    return solver, lb_u, ub_u
+
+solver, lb_u, ub_u = define_optimization_problem()
+
 # Send and receive data to/from FPGA
 def communicate_with_fpga(sensor_data):
     # Send sensor data
@@ -101,7 +120,11 @@ def communicate_with_fpga(sensor_data):
     control_signal = ser.read(size=240)  # Adjusted size for 60 float32 values
     control_signal = np.frombuffer(control_signal, dtype=np.float32)
     
-    return control_signal
+    # Optimize control signal
+    sol = solver(x0=control_signal, lbg=lb_u, ubg=ub_u)
+    optimized_control_signal = sol['x'].full().flatten()
+    
+    return optimized_control_signal
 
 if __name__ == "__main__":
     rospy.spin()
