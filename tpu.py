@@ -1,6 +1,9 @@
 import tensorflow as tf
 from tensorflow.keras import layers, models, optimizers
 import numpy as np
+import socket
+import serial
+import casadi as ca
 
 # Neural Network Architecture for PINN
 class BipedalHumanoidPINN(models.Model):
@@ -75,28 +78,80 @@ class RLAgent(models.Model):
         action_dist = tf.random.normal(action_mean.shape, mean=action_mean, stddev=tf.exp(self.log_std))
         return action_dist, tf.reduce_sum(tf.math.log(action_dist), axis=-1)
 
-# Training Loop
-def train(pinn_model, rl_agent, optimizer_pinn, optimizer_rl, inputs, num_epochs, print_every=100):
-    for epoch in range(num_epochs):
-        with tf.GradientTape() as tape_pinn:
-            pinn_loss = physics_informed_loss(pinn_model, inputs)
-        grads_pinn = tape_pinn.gradient(pinn_loss, pinn_model.trainable_variables)
-        optimizer_pinn.apply_gradients(zip(grads_pinn, pinn_model.trainable_variables))
+# Initialize TCP/IP communication with ROS node
+def initialize_socket_connection():
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.bind(('0.0.0.0', 5000))  # Replace with appropriate IP and PORT if needed
+    server_socket.listen(1)
+    print("Waiting for connection...")
+    conn, addr = server_socket.accept()
+    print(f"Connected by {addr}")
+    return conn
 
-        with tf.GradientTape() as tape_rl:
-            actions, log_probs = rl_agent.select_action(inputs)
-            value_loss = -tf.reduce_mean(log_probs)  # Example loss for RL, usually more complex
-        grads_rl = tape_rl.gradient(value_loss, rl_agent.trainable_variables)
-        optimizer_rl.apply_gradients(zip(grads_rl, rl_agent.trainable_variables))
+# Define the optimization problem using CasADi
+def define_optimization_problem():
+    n_controls = 60
+    u = ca.MX.sym('u', n_controls)
 
-        if epoch % print_every == 0:
-            print(f'Epoch {epoch}, PINN Loss: {pinn_loss.numpy()}, RL Loss: {value_loss.numpy()}')
+    # Define the objective function (example: minimize the control effort)
+    objective = ca.mtimes(u.T, u)
 
-if __name__ == "__main__":
-    # Example usage
-    inputs = np.random.rand(100, 60).astype(np.float32)  # Example input data
+    # Define constraints (example: control signals must be within certain limits)
+    lb_u = -np.ones(n_controls) * 1.0  # Lower bound for control signals
+    ub_u = np.ones(n_controls) * 1.0  # Upper bound for control signals
+
+    nlp = {'x': u, 'f': objective}
+    opts = {'ipopt.print_level': 0, 'print_time': 0}
+    solver = ca.nlpsol('solver', 'ipopt', nlp, opts)
+    
+    return solver, lb_u, ub_u
+
+solver, lb_u, ub_u = define_optimization_problem()
+
+# Initialize serial communication with FPGA
+def initialize_serial(port='/dev/ttyUSB0', baudrate=9600):
+    try:
+        ser = serial.Serial(port, baudrate)
+        return ser
+    except serial.SerialException as e:
+        print(f"Failed to initialize serial communication: {e}")
+        return None
+
+ser = initialize_serial()
+
+# Send and receive data to/from FPGA
+def communicate_with_fpga(control_signals):
+    try:
+        ser.write(control_signals.tobytes())
+        optimized_control_signal = ser.read(size=240)  # Adjusted size for 60 float32 values
+        optimized_control_signal = np.frombuffer(optimized_control_signal, dtype=np.float32)
+        return optimized_control_signal
+    except Exception as e:
+        print(f"Error in communication with FPGA: {e}")
+        return control_signals  # Return the original control signals if FPGA communication fails
+
+# Main loop for receiving data from ROS node, processing it, and sending back control signals
+def main():
+    conn = initialize_socket_connection()
     pinn_model = BipedalHumanoidPINN()
     rl_agent = RLAgent(input_dim=60, action_dim=60)
     optimizer_pinn = optimizers.Adam(learning_rate=0.001)
     optimizer_rl = optimizers.Adam(learning_rate=0.001)
-    train(pinn_model, rl_agent, optimizer_pinn, optimizer_rl, inputs, num_epochs=1000)
+
+    while True:
+        try:
+            data = conn.recv(240)  # Adjust size if necessary
+            if not data:
+                break
+            inputs = np.frombuffer(data, dtype=np.float32).reshape(1, -1)
+            control_signals = pinn_model(inputs)
+            optimized_control_signals = communicate_with_fpga(control_signals)
+            conn.sendall(optimized_control_signals.tobytes())
+        except socket.error as e:
+            print(f"Socket error: {e}")
+            break
+
+    conn.close()
+
+if __name__ == "__main__":
+    main()
