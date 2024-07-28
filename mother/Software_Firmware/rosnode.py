@@ -10,7 +10,7 @@ import casadi as ca
 
 # ROS Node Initialization
 def initialize_ros_node():
-    rospy.init_node('bipedal_humanoid_pinn')
+    rospy.init_node('bipedal_humanoid_pinn', anonymous=True)
     control_pub = rospy.Publisher('/control_signals', Float64MultiArray, queue_size=10)
     return control_pub
 
@@ -30,8 +30,9 @@ scaler = StandardScaler()
 
 def update_and_normalize(data, new_data):
     data.append(new_data)
-    if len(data) == 100:
-        return scaler.fit_transform(np.array(data))
+    if len(data) == data.maxlen:
+        normalized_data = scaler.fit_transform(np.array(data))
+        return normalized_data
     return None
 
 # ROS Callback Functions
@@ -89,7 +90,15 @@ def subscribe_to_ros_topics():
 subscribe_to_ros_topics()
 
 # Initialize serial communication with FPGA
-ser = serial.Serial('/dev/ttyUSB0', 9600)
+def initialize_serial(port='/dev/ttyUSB0', baudrate=9600):
+    try:
+        ser = serial.Serial(port, baudrate)
+        return ser
+    except serial.SerialException as e:
+        rospy.logerr(f"Failed to initialize serial communication: {e}")
+        return None
+
+ser = initialize_serial()
 
 # Define the optimization problem using CasADi
 def define_optimization_problem():
@@ -113,18 +122,22 @@ solver, lb_u, ub_u = define_optimization_problem()
 
 # Send and receive data to/from FPGA
 def communicate_with_fpga(sensor_data):
-    # Send sensor data
-    ser.write(sensor_data.tobytes())
-    
-    # Read control signal
-    control_signal = ser.read(size=240)  # Adjusted size for 60 float32 values
-    control_signal = np.frombuffer(control_signal, dtype=np.float32)
-    
-    # Optimize control signal
-    sol = solver(x0=control_signal, lbg=lb_u, ubg=ub_u)
-    optimized_control_signal = sol['x'].full().flatten()
-    
-    return optimized_control_signal
+    try:
+        # Send sensor data
+        ser.write(sensor_data.tobytes())
+        
+        # Read control signal
+        control_signal = ser.read(size=240)  # Adjusted size for 60 float32 values
+        control_signal = np.frombuffer(control_signal, dtype=np.float32)
+        
+        # Optimize control signal
+        sol = solver(x0=control_signal, lbg=lb_u, ubg=ub_u)
+        optimized_control_signal = sol['x'].full().flatten()
+        
+        return optimized_control_signal
+    except Exception as e:
+        rospy.logerr(f"Error in communication with FPGA: {e}")
+        return np.zeros(60, dtype=np.float32)  # Return a safe default control signal in case of error
 
 if __name__ == "__main__":
     rospy.spin()
