@@ -1,5 +1,3 @@
-# tpu.py
-
 import tensorflow as tf
 from tensorflow.keras import layers, models, optimizers
 import numpy as np
@@ -8,11 +6,11 @@ import numpy as np
 class BipedalHumanoidPINN(models.Model):
     def __init__(self):
         super(BipedalHumanoidPINN, self).__init__()
-        self.fc1 = layers.Dense(256, activation='tanh', input_shape=(60,))
-        self.fc2 = layers.Dense(256, activation='tanh')
-        self.fc3 = layers.Dense(128, activation='tanh')
+        self.fc1 = layers.Dense(512, activation='relu', input_shape=(60,))
+        self.fc2 = layers.Dense(512, activation='relu')
+        self.fc3 = layers.Dense(256, activation='relu')
         self.fc4 = layers.Dense(60)
-        self.dropout = layers.Dropout(0.3)
+        self.dropout = layers.Dropout(0.4)
 
     def call(self, inputs, training=False):
         x = self.fc1(inputs)
@@ -59,8 +57,8 @@ def physics_informed_loss(model, inputs, k_stability=0.01):
 class RLAgent(models.Model):
     def __init__(self, input_dim, action_dim):
         super(RLAgent, self).__init__()
-        self.fc1 = layers.Dense(128, activation='tanh', input_shape=(input_dim,))
-        self.fc2 = layers.Dense(128, activation='tanh')
+        self.fc1 = layers.Dense(256, activation='relu', input_shape=(input_dim,))
+        self.fc2 = layers.Dense(256, activation='relu')
         self.fc3 = layers.Dense(action_dim)
         self.value_head = layers.Dense(1)
         self.log_std = tf.Variable(tf.zeros(action_dim), trainable=True)
