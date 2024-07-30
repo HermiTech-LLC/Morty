@@ -54,7 +54,7 @@ This project implements a bipedal humanoid control system using a Physics-Inform
 - PyTorch
 - scikit-learn
 - iverilog (for Verilog compilation)
-- sKiDL (for electronic design)
+- pcbnew (for electronic design in Kipython)
 
 ## Setup
 
