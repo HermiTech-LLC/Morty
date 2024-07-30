@@ -64,7 +64,7 @@ Ensure all dependencies are installed using the following commands:
 ```sh
 sudo apt-get install ros-humble-desktop-full
 sudo apt-get install iverilog
-pip install torch scikit-learn skidl
+pip install torch scikit-learn
 ```
 
 ### Compile the Verilog Modules
