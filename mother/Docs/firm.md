@@ -1,7 +1,7 @@
-# Project Skeleton Framework: Booting OS from Local NAS on Dev Board
+# Project Skeleton Framework: Booting OS from Local NAS using SSHFS on Dev Board
 
 ## Project Overview
-The objective is to boot an operating system (OS) from a local NAS using FUSE in the initramfs. This involves building a custom initramfs with network support and necessary binaries, leveraging Yocto for creating custom Linux distributions. The goal is to develop a robust, scalable, and maintainable solution suitable for various environments.
+The objective is to boot an operating system (OS) from a local NAS using SSHFS in the initramfs. This involves building a custom initramfs with network support and necessary binaries, leveraging Yocto for creating custom Linux distributions. The goal is to develop a robust, scalable, and maintainable solution suitable for various environments.
 
 ## 1. Setup and Prerequisites
 
@@ -9,8 +9,8 @@ The objective is to boot an operating system (OS) from a local NAS using FUSE in
 - **Dracut** (or an equivalent initramfs tool)
 - **Docker** (or any container runtime)
 - **A compatible Linux distribution** (e.g., Arch Linux)
-- **Local NAS setup** with accessible file share
-- **FUSE and related tools**
+- **Local NAS setup** with SSH access
+- **SSHFS and related tools**
 - **Yocto Project** for building custom Linux distributions
 
 ### 1.2 Basic Commands
@@ -42,26 +42,26 @@ podman run -it --name arch -v ./dracut:/dracut docker.io/archlinux:latest bash
   make
   ```
 
-### 3.2 Module Script for FUSE
-Create a module script in `modules.d/90fuse/module-setup.sh`:
+### 3.2 Module Script for SSHFS
+Create a module script in `modules.d/90sshfs/module-setup.sh`:
 ```bash
 #!/bin/bash
 check() {
-    require_binaries fusermount fuseiso mkisofs || return 1
+    require_binaries sshfs || return 1
     return 0
 }
 depends() {
     return 0
 }
 install() {
-    inst_multiple fusermount fuseiso mkisofs
+    inst_multiple sshfs
     return 0
 }
 ```
 
 ### 3.3 Building EFI Image
 ```bash
-./dracut.sh --kver <kernel-version> --uefi efi_firmware/EFI/BOOT/BOOTX64.efi --force -l -N --no-hostonly-cmdline --modules "base bash fuse shutdown network" --add-drivers "target_core_mod target_core_file e1000" --kernel-cmdline "ip=dhcp rd.shell=1 console=ttyS0"
+./dracut.sh --kver <kernel-version> --uefi efi_firmware/EFI/BOOT/BOOTX64.efi --force -l -N --no-hostonly-cmdline --modules "base bash sshfs shutdown network" --add-drivers "target_core_mod target_core_file e1000" --kernel-cmdline "ip=dhcp rd.shell=1 console=ttyS0"
 ```
 
 ## 4. Yocto Project Integration
@@ -82,25 +82,25 @@ install() {
   DISTRO = "poky"
   ```
 
-### 4.3 Adding FUSE Support in Yocto
+### 4.3 Adding SSHFS Support in Yocto
 - Create a new layer for custom recipes:
   ```bash
   bitbake-layers create-layer meta-custom
   bitbake-layers add-layer meta-custom
   ```
 
-- Add a recipe for FUSE in `meta-custom/recipes-support/fuse/fuse_2.9.7.bb`:
+- Add a recipe for SSHFS in `meta-custom/recipes-support/sshfs/sshfs_3.7.1.bb`:
   ```bash
-  SUMMARY = "Filesystem in Userspace"
-  DESCRIPTION = "FUSE (Filesystem in Userspace) is a simple interface for userspace programs to export a virtual filesystem to the Linux kernel."
-  LICENSE = "LGPLv2.1"
-  SRC_URI = "https://github.com/libfuse/libfuse/releases/download/fuse-2.9.7/fuse-2.9.7.tar.gz"
+  SUMMARY = "SSH Filesystem"
+  DESCRIPTION = "SSHFS (SSH Filesystem) allows for mounting remote directories over SSH."
+  LICENSE = "GPLv2"
+  SRC_URI = "https://github.com/libfuse/sshfs/releases/download/sshfs-3.7.1/sshfs-3.7.1.tar.xz"
   
   inherit autotools
   ```
 
-### 4.4 Building Yocto Image with FUSE Support
-- Build the custom image with FUSE support:
+### 4.4 Building Yocto Image with SSHFS Support
+- Build the custom image with SSHFS support:
   ```bash
   bitbake core-image-minimal
   ```
@@ -116,7 +116,7 @@ install() {
 
 - Ensure necessary binaries are included in the initramfs:
   ```bash
-  cp /path/to/yocto/build/tmp/deploy/images/qemux86-64/fuse-binary /path/to/initramfs/usr/bin/
+  cp /path/to/yocto/build/tmp/deploy/images/qemux86-64/sshfs-binary /path/to/initramfs/usr/bin/
   ```
 
 ## 5. Debugging and Adjustments
@@ -124,7 +124,6 @@ install() {
 ### 5.1 Networking and Drivers
 Configure the network and load necessary drivers:
 ```bash
-modprobe fuse
 modprobe e1000
 ip link set lo up
 ip link set eth0 up
@@ -132,10 +131,10 @@ dhclient eth0
 ip route add default via <gateway-ip> dev eth0 proto dhcp src <local-ip>
 ```
 
-### 5.2 Mounting NAS Filesystem
-Mount the NAS filesystem using FUSE:
+### 5.2 Mounting NAS Filesystem using SSHFS
+Mount the NAS filesystem using SSHFS:
 ```bash
-fuseiso -o url=<nas-url> -o use_path_request_style fuse /sysroot
+sshfs user@nas-ip:/path/to/share /sysroot -o allow_other
 ls /sysroot
 switch_root /sysroot /sbin/init
 ```
@@ -145,13 +144,12 @@ switch_root /sysroot /sbin/init
 ### 6.1 Chroot Method
 Modify initramfs's init script to use `chroot`:
 ```bash
-modprobe fuse
 modprobe e1000
 ip link set lo up
 ip link set eth0 up
 dhclient eth0
 ip route add default via <gateway-ip> dev eth0 proto dhcp src <local-ip>
-fuseiso -o url=<nas-url> -o use_path_request_style fuse /sysroot
+sshfs user@nas-ip:/path/to/share /sysroot -o allow_other
 mount --rbind /sys /sysroot/sys
 mount --rbind /dev /sysroot/dev
 mount -t proc /proc /sysroot/proc
@@ -160,7 +158,7 @@ exec chroot /sysroot /sbin/init
 
 ## 7. Finalizing and Deployment
 
-### 7.1 Boot from NAS Storage
+### 7.1 Boot from NAS Storage using SSHFS
 Ensure proper symlink handling:
 ```bash
 mkdir /sysroot/sysroot
@@ -203,15 +201,34 @@ modprobe r8169
 modprobe hid_usb
 ```
 
-## 9. Additional Considerations
+## 9. Adaptations and Commercialization
 
 ### 9.1 Further Adaptations
-- Explore booting from other local storage services (e.g., SSHFS, NFS).
-- Implement project-specific changes and optimizations.
+- **Booting from Other Storage Services:** Explore booting from other local storage services such as NFS.
+- **Security Enhancements:** Implement robust security measures for network communications and NAS access.
+  - Use encryption for data in transit and at rest.
+  - Configure firewalls and access controls to limit exposure.
+  - Regularly update and patch all components to mitigate vulnerabilities.
+- **Scalability:** Ensure the solution can scale to accommodate larger networks and more devices.
+  - Design the architecture to handle increased load.
+  - Use efficient algorithms and data structures to improve performance.
+  - Monitor resource usage and optimize as needed.
+- **User-Friendly Interfaces:** Develop user-friendly GUIs for configuration and management.
+  - Provide clear documentation and support resources.
+  - Design intuitive interfaces that simplify complex tasks.
+  - Gather user feedback to continuously improve usability.
+- **Support and Maintenance:** Provide ongoing support and regular updates to ensure reliability and security.
+  - Establish a support team to assist users with issues.
+  - Release regular updates to fix bugs and add new features.
+  - Implement a system for tracking and addressing user feedback.
 
 ### 9.2 Commercialization Potential
-Consider adapting the framework for enterprise solutions, focusing on local NAS-based computing and cloud-native environments.
+Consider adapting the framework for enterprise solutions, focusing on local NAS-based computing and cloud-native environments. This includes:
+- **Enhanced Security:** Implement robust security measures for network communications and NAS access.
+- **Scalability:** Ensure the solution can scale to accommodate larger networks and more devices.
+- **User-Friendly Interfaces:** Develop user-friendly GUIs for configuration and management.
+- **Support and Maintenance:** Provide ongoing support and regular updates to ensure reliability and security.
 
 ---
 
-This structured plan provides a comprehensive guide for booting an operating system from a local NAS using a development board. It leverages Dracut and Yocto to create a custom initramfs and OS image, ensuring flexibility and scalability for various deployment scenarios.
+This structured plan provides a comprehensive guide for booting an operating system from a local NAS using SSHFS on a development board. It leverages Dracut and Yocto to create a custom initramfs and OS image, ensuring flexibility and scalability for various deployment scenarios. The inclusion of adaptations and commercialization potential ensures the framework is robust and adaptable for both personal and enterprise use.
