@@ -1,16 +1,16 @@
-Component,Description,Quantity,Unit Cost (USD),Total Cost (USD)
-SoC,NXP i.MX 8M Mini Quad,1,$15.00,$15.00
-FPGA,Xilinx Zynq UltraScale+ MPSoC,1,$100.00,$100.00
-Memory,Micron LPDDR4 4GB,1,$25.00,$25.00
-Storage,Samsung eMMC 128GB,1,$15.00,$15.00
-IMU,Bosch BNO080 (9-axis IMU),1,$5.00,$5.00
-Connectivity Module,Intel 9260NGW (Wi-Fi/Bluetooth),1,$20.00,$20.00
-AI Co-Processor,Google Coral Edge TPU,1,$25.00,$25.00
-Motor Driver,Texas Instruments DRV8432,4,$8.00,$32.00
-Power Management IC,Texas Instruments TPS65988,1,$10.00,$10.00
-Voltage Regulator,Analog Devices ADP5054,1,$8.00,$8.00
-Decoupling Capacitor,100nF Capacitor (0805 package),20,$0.10,$2.00
-Connectors and Miscellaneous,Board-to-Board, Power Connectors, etc.,Various,$20.00,$20.00
-,Total Components Cost,,,$277.00
-,Miscellaneous Costs,,,$50.00 - $100.00
-,Grand Total,,,$327.00 - $377.00
+Component,Description,Quantity,Unit Cost (USD),Total Cost (USD),Additional Info,Notes
+SoC,NXP i.MX 8M Mini Quad,1,$15.00,$15.00,, 
+FPGA,Xilinx Zynq UltraScale+ MPSoC,1,$100.00,$100.00,,
+Memory,Micron LPDDR4 4GB,1,$25.00,$25.00,,
+Storage,Samsung eMMC 128GB,1,$15.00,$15.00,,
+IMU,Bosch BNO080 (9-axis IMU),1,$5.00,$5.00,,
+Connectivity Module,Intel 9260NGW (Wi-Fi/Bluetooth),1,$20.00,$20.00,,
+AI Co-Processor,Google Coral Edge TPU,1,$25.00,$25.00,,
+Motor Driver,Texas Instruments DRV8432,4,$8.00,$32.00,,
+Power Management IC,Texas Instruments TPS65988,1,$10.00,$10.00,,
+Voltage Regulator,Analog Devices ADP5054,1,$8.00,$8.00,,
+Decoupling Capacitor,100nF Capacitor (0805 package),20,$0.10,$2.00,,
+Connectors and Miscellaneous,Board-to-Board, Power Connectors, etc.,Various,$20.00,$20.00,,
+Total Components Cost,,,,$277.00,,
+Miscellaneous Costs,,,,$50.00 - $100.00,,
+Grand Total,,,,$327.00 - $377.00,,
