@@ -1,16 +1,16 @@
 Component,Description,Quantity,Unit Cost (USD),Total Cost (USD)
-Microcontroller,ESP32-WROOM-32,2,5,10
-CPU,ATmega2560,1,10,10
-RAM,MT48LC16M16A2P-75,1,15,15
-FLASH Memory,W25Q64FVSSIG,1,2,2
-UART Communication,MAX232,1,1,1
-PMIC,TPS65217,1,5,5
-USB Controller,USB3320C-EZK,1,3,3
-Ethernet Controller,LAN8720,1,2,2
-Clock Generator,SI5351A-B-GT,1,2,2
-TPU,Google Edge TPU,1,25,25
-FPGA,Xilinx XC7A35T-1FTG256C,1,50,50
+SoC,NXP i.MX 8M Mini Quad,1,15,15
+FPGA,Xilinx Zynq UltraScale+ MPSoC,1,100,100
+Memory,Micron LPDDR4 4GB,1,25,25
+Storage,Samsung eMMC 128GB,1,15,15
+IMU,Bosch BNO080 (9-axis IMU),1,5,5
+Connectivity Module,Intel 9260NGW (Wi-Fi/Bluetooth),1,20,20
+AI Co-Processor,Google Coral Edge TPU,1,25,25
+Motor Driver,Texas Instruments DRV8432,4,8,32
+Power Management IC,Texas Instruments TPS65988,1,10,10
+Voltage Regulator,Analog Devices ADP5054,1,8,8
 Decoupling Capacitor,100nF Capacitor (0805 package),20,0.1,2
-,Total Components Cost,,,$127
+Connectors and Misc,Board-to-Board, Power Connectors, etc.,Various,20,20
+,Total Components Cost,,,$277
 ,Miscellaneous Costs,,,$50 - $100
-,Grand Total,,,$177 - $227
+,Grand Total,,,$327 - $377
