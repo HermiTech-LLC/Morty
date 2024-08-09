@@ -101,7 +101,3 @@ The main 12V input is regulated down to the required voltages for various compon
 2. **Miniaturization**: Transition to the final compact PCB design, ensuring all components fit within the space constraints of the 7 1/2 x 2 1/2 inch tin.
 3. **Testing**: Conduct extensive testing, including thermal, power, and performance assessments, to ensure the board meets all design criteria.
 4. **Final Assembly**: Secure the PCB within the tin using 3D-printed mounts, connect all peripherals, and perform final system calibration to ensure optimal performance.
-
-## Conclusion
-
-The Morty Project’s advanced motherboard design successfully integrates high-performance components within a compact form factor, ensuring efficiency, modularity, and robustness. The detailed power distribution strategy provides stable and reliable power across the system, enabling the robot to perform complex tasks in real-time with ROS integration. This design represents a versatile platform for sophisticated robotics applications, combining cutting-edge technology with practical engineering solutions.
