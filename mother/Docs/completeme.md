@@ -22,30 +22,42 @@
 ## Phase 2: Define Hardware and Software Requirements
 
 1. **Identify Target Hardware**
-   - Determine the hardware platform (e.g., Raspberry Pi 4, BeagleBone Black, custom FPGA board).
-   - Ensure the hardware supports AI/ML processing and ROS integration.
+   - **SoC**: NXP i.MX 8M Mini Quad
+   - **FPGA**: Xilinx Zynq UltraScale+ MPSoC
+   - **Memory**: Micron LPDDR4 4GB
+   - **Storage**: Samsung eMMC 128GB
+   - **Connectivity**: Intel 9260NGW (Wi-Fi/Bluetooth)
+   - **AI Co-Processor**: Google Coral Edge TPU
+   - **UART Communication**: Custom UART module interfacing with CPU and FPGA
+
+   Ensure that the hardware platform supports AI/ML processing, ROS integration, and robust connectivity.
 
 2. **List Software Dependencies**
-   - AI/ML libraries: PyTorch, scikit-learn.
-   - ROS and other dependencies listed in the `README.md`.
-   - Additional dependencies for `main.py` and `rospinn.py`.
+   - AI/ML libraries: PyTorch, TensorFlow, scikit-learn.
+   - ROS (Robot Operating System) and additional ROS packages for sensor data processing and control.
+   - Custom scripts: `main.py`, `rospinn.py`, and other necessary Python modules for interfacing with hardware.
+   - FPGA bitstreams and Verilog/VHDL modules for custom processing tasks.
+   - Communication libraries for UART, TCP/IP, and any necessary protocols.
 
 ## Phase 3: Create Custom Layers and Bitbake Recipes
 
 1. **Create Custom Yocto Layers**
-   - Create custom layers for the project:
+   - Create custom layers for each significant component of the project:
      ```sh
-     bitbake-layers create-layer meta-morty
+     bitbake-layers create-layer meta-bipedal
      ```
 
 2. **Layer Structure**
-   - Organize the layers to separate functionalities (e.g., AI/ML layer, ROS layer, FPGA layer).
+   - Organize the layers based on functionalities:
+     - **meta-ai**: For AI/ML libraries like PyTorch and TensorFlow.
+     - **meta-ros**: For ROS integration and related tools.
+     - **meta-fpga**: For FPGA bitstreams and Verilog/VHDL files.
+     - **meta-connectivity**: For connectivity libraries (Wi-Fi, Bluetooth, UART).
 
 3. **Develop Bitbake Recipes**
-   - Create recipes for each software component and dependency. For example, for PyTorch:
+   - **AI/ML Recipe** (e.g., for PyTorch):
      ```sh
-     bitbake-layers add-layer meta-morty
-     cd meta-morty/recipes-example
+     cd meta-ai/recipes-ai
      mkdir pytorch
      cd pytorch
      ```
@@ -69,16 +81,15 @@
      RDEPENDS_${PN} = "python3"
      ```
 
-4. **Develop ROS Recipe**
-   - Create a recipe for ROS integration:
+   - **ROS Recipe**:
      ```sh
-     cd meta-morty/recipes-example
+     cd meta-ros/recipes-ros
      mkdir ros
      cd ros
      ```
    - Create `ros_%.bb` recipe file:
      ```sh
-     DESCRIPTION = "ROS"
+     DESCRIPTION = "ROS Noetic"
      LICENSE = "BSD"
      SRC_URI = "http://wiki.ros.org/ROS/Installation"
 
@@ -89,16 +100,15 @@
      RDEPENDS_${PN} = "python3"
      ```
 
-5. **Develop Recipe for `main.py` and `rospinn.py`**
-   - Create recipes for `main.py` and `rospinn.py`:
+   - **Custom Script Recipe**:
      ```sh
-     cd meta-morty/recipes-example
-     mkdir morty-scripts
-     cd morty-scripts
+     cd meta-bipedal/recipes-bipedal
+     mkdir scripts
+     cd scripts
      ```
-   - Create `morty-scripts.bb` recipe file:
+   - Create `bipedal-scripts.bb` recipe file:
      ```sh
-     DESCRIPTION = "Morty Scripts"
+     DESCRIPTION = "Bipedal Humanoid Scripts"
      LICENSE = "MIT"
      SRC_URI = "file://main.py file://rospinn.py"
 
@@ -111,46 +121,66 @@
      RDEPENDS_${PN} = "python3 torch ros"
      ```
 
+   - **FPGA Bitstream Recipe**:
+     ```sh
+     cd meta-fpga/recipes-fpga
+     mkdir bitstream
+     cd bitstream
+     ```
+   - Create `fpga-bitstream.bb` recipe file:
+     ```sh
+     DESCRIPTION = "FPGA Bitstream for Bipedal Humanoid"
+     LICENSE = "Proprietary"
+     SRC_URI = "file://top_L.bit"
+
+     do_install() {
+         install -d ${D}/lib/firmware
+         install -m 0644 ${WORKDIR}/top_L.bit ${D}/lib/firmware/
+     }
+     ```
+
 ## Phase 4: Integration and Testing
 
 1. **Integrate AI/ML Models**
-   - Integrate the selected AI/ML models into the Yocto build.
-   - Optimize model performance for the target hardware.
+   - Integrate AI/ML models trained for your specific robotic tasks into the Yocto build.
+   - Optimize model performance for the NXP i.MX 8M Mini Quad and Coral Edge TPU.
 
 2. **Develop Application Logic**
-   - Implement the main application logic in Python.
-   - Leverage existing `main.py` and `rospinn.py` scripts as necessary.
+   - Implement and test the main application logic using ROS, custom scripts, and communication protocols.
+   - Ensure tight integration between the FPGA, CPU, and AI/ML models, with real-time data processing and control.
 
 3. **Test and Debug**
-   - Test the integrated system on the target hardware.
-   - Validate functionality and performance.
+   - Test the integrated system on the target hardware (including FPGA and ROS nodes).
+   - Validate that communication between ROS nodes, AI models, and FPGA hardware is seamless.
+   - Debug any issues related to timing, signal processing, or data flow.
 
 ## Phase 5: Deployment and Documentation
 
 1. **Create Final Image**
-   - Build the final Yocto image for the embedded device:
+   - Build the final Yocto image for the embedded device, ensuring all components are included:
      ```sh
-     bitbake core-image-minimal
+     bitbake core-image-full-cmdline
      ```
 
 2. **Deploy and Test**
-   - Deploy the built image to the target hardware and verify the system.
+   - Deploy the built image to the target hardware (FPGA + CPU + peripherals).
+   - Test the system in a real-world environment, ensuring stability and performance under load.
 
 3. **Documentation**
-   - Update `README.md` with detailed instructions for building and deploying the project.
-   - Document any customizations and configurations made during the project.
+   - Update `README.md` with detailed instructions for building, deploying, and configuring the project.
+   - Document customizations, configuration files, and any special instructions for replication.
+   - Include troubleshooting tips and expected outcomes for different test scenarios.
 
 ## Immediate Action Items
 
 1. **Set Up Yocto Environment**
-   - Install required tools and download the Yocto Project repository.
-   - Set up the initial build environment.
+   - Install required tools, download the Yocto Project repository, and set up the initial build environment.
 
 2. **Prepare Custom Layers and Recipes**
-   - Begin developing the custom layers and Bitbake recipes based on the project requirements.
+   - Develop and refine the custom layers and Bitbake recipes tailored to your project’s hardware and software requirements.
 
 3. **Integrate AI/ML Models**
-   - Ensure the AI/ML models are optimized and integrated into the Yocto build.
+   - Optimize and integrate the AI/ML models, ensuring they work efficiently with the hardware platform.
 
 4. **Test and Debug**
-   - Test the integrated system on the target hardware and debug any issues.
+   - Thoroughly test the integrated system on the target hardware and address any issues that arise.
