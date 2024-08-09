@@ -11,7 +11,7 @@ Motor Driver,Texas Instruments DRV8432,4,$8.00,$32.00
 Power Management IC,Texas Instruments TPS65988,1,$10.00,$10.00
 Voltage Regulator,Analog Devices ADP5054,1,$8.00,$8.00
 Decoupling Capacitor,100nF Capacitor (0805 package),20,$0.10,$2.00
-Connectors and Miscellaneous,Board-to-Board, Power Connectors, etc.,Various,$20.00,$20.00
+Connectors and Miscellaneous,"Board-to-Board, Power Connectors, etc.",Various,$20.00,$20.00
 Total Components Cost,,,,$317.00
 Miscellaneous Costs,,,,$50.00 - $100.00
 Grand Total,,,,$367.00 - $417.00
