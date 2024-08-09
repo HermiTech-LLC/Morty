@@ -1,0 +1,26 @@
+Ref Des,Value,Footprint,PosX,PosY,Rot,Side
+U1,NXP i.MX 8M Mini Quad,BGA-400,16,30,0,Top
+U2,Xilinx Zynq MPSoC,BGA-484,48,30,0,Top
+U3,Micron LPDDR4 4GB,BGA-178,16,70,0,Top
+U4,Samsung eMMC 128GB,BGA-153,48,70,0,Top
+U5,Bosch BNO080,LGA-28,16,110,0,Top
+U6,Intel 9260NGW,M.2 (2230),48,110,0,Top
+U7,Google Coral Edge TPU,M.2 Key E,16,150,0,Top
+U8,TI DRV8432,HTSSOP-36,48,150,0,Top
+U9,TI TPS65988,VQFN-48,16,190,0,Top
+U10,Analog ADP5054,LFCSP-32,48,190,0,Top
+C1-C20,100nF Capacitors,0805,32,225,0,Top
+L1,Inductor (Power Filter),0603,20,40,0,Top
+C21,C22,22uF Capacitors,0805,24,30,0,Top
+R1,R2,10kΩ Resistors,0603,28,40,0,Top
+U11,Crystal Oscillator,4-pin,30,20,0,Top
+D1,Schottky Diode,SOD-123,34,30,0,Top
+U12,Level Shifter,TSSOP-8,38,40,0,Top
+Q1,N-Channel MOSFET,SOT-23,42,30,0,Top
+C23,C24,100uF Capacitors,1210,46,40,0,Top
+R3,R4,47Ω Resistors,0603,50,30,0,Top
+U13,RTC (Real-Time Clock),SOIC-8,54,40,0,Top
+U14,EEPROM,SOIC-8,58,30,0,Top
+J1,Main Power Connector,Through-hole,62,40,0,Top
+J2,Programming Header,Through-hole,66,30,0,Top
+J3,UART Header,Through-hole,70,40,0,Top
