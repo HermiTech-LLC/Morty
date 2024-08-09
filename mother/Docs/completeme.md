@@ -5,8 +5,8 @@
 1. **Install Required Tools**
    - Install Yocto Project dependencies on your development machine:
      ```sh
-     sudo apt-get install gawk wget git-core diffstat unzip texinfo gcc-multilib \\
-     build-essential chrpath socat cpio python3 python3-pip python3-pexpect \\
+     sudo apt-get install gawk wget git-core diffstat unzip texinfo gcc-multilib \
+     build-essential chrpath socat cpio python3 python3-pip python3-pexpect \
      xz-utils debianutils iputils-ping
      ```
 
